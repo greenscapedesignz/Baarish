@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RainSite Intelligence™ | GDHI Framework</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f4f7f6; --surface:#ffffff; --surface2:#ebf0ee; --border:#cbd6d1;
+  --forest:#14452f; --forest2:#1f5e42; --forest3:#2d7a58; --forest-light:#e2ede8;
+  --water:#0f5282; --water2:#166a9e; --water-light:#dbeafe;
+  --amber:#b5620a; --amber2:#d97730; --amber-light:#fef3c7;
+  --red:#b91c1c; --green:#15803d;
+  --text:#1a2420; --text2:#3d5248; --text3:#738c80; --text4:#a3b8ad;
+  --shadow:0 2px 14px rgba(20,69,47,.08); --shadow-lg:0 8px 36px rgba(20,69,47,.12);
+  --radius:8px; --radius-sm:5px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"Helvetica Neue", Helvetica, Arial, sans-serif;background:var(--bg);color:var(--text);min-height:100vh; line-height: 1.5;}
+
+/* HEADER */
+.hdr{background:linear-gradient(135deg,var(--forest) 0%,#0a2e1d 100%);color:#fff;padding:1rem 1.75rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;box-shadow:0 3px 20px rgba(0,0,0,.15);}
+.hdr-brand{display:flex;align-items:center;gap:.85rem;}
+.hdr-icon{width:42px;height:42px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;}
+.hdr h1{font-size:1.3rem;font-weight:700;letter-spacing:-.02em;}
+.hdr p{font-size:.75rem;opacity:.8;margin-top:.1rem;}
+.hdr-right{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;}
+
+/* STEP NAV */
+.snav{background:#fff;border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;overflow-x:auto;gap:0;}
+.snav-btn{padding:.85rem 1.25rem;border:none;background:none;cursor:pointer;font-family:inherit;font-size:.85rem;font-weight:500;color:var(--text3);border-bottom:3px solid transparent;white-space:nowrap;transition:all .2s;display:flex;align-items:center;gap:.5rem;}
+.snav-btn:hover{color:var(--forest);}
+.snav-btn.active{color:var(--forest);border-bottom-color:var(--forest);font-weight:700;}
+.snav-btn.done{color:var(--forest2);}
+.snum{width:22px;height:22px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;transition:all .2s;}
+.snav-btn.active .snum{background:var(--forest);color:#fff;}
+.snav-btn.done .snum{background:var(--green);color:#fff;}
+
+/* MAIN */
+.main{max-width:1380px;margin:0 auto;padding:1.75rem;}
+.panel{display:none;} .panel.active{display:block;}
+
+/* CARDS */
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;box-shadow:var(--shadow);}
+.card-title{font-size:1.1rem;font-weight:700;color:var(--forest);margin-bottom:.3rem;letter-spacing:-.01em;}
+.card-sub{font-size:.8rem;color:var(--text3);margin-bottom:1.2rem;line-height:1.4;}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:1.2rem;}
+@media(max-width:1100px){.g4{grid-template-columns:1fr 1fr;}.g3{grid-template-columns:1fr 1fr;}}
+@media(max-width:700px){.g2,.g3,.g4{grid-template-columns:1fr;}.main{padding:1rem;}}
+
+/* METRIC CARDS */
+.metric{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;position:relative;overflow:hidden;}
+.metric::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.metric.green::before{background:var(--forest);}
+.metric.blue::before{background:var(--water);}
+.metric.amber::before{background:var(--amber);}
+.metric.red::before{background:var(--red);}
+.metric-lbl{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);font-weight:700;margin-bottom:.3rem;}
+.metric-val{font-size:1.8rem;font-weight:700;color:var(--text);line-height:1;letter-spacing:-.02em;}
+.metric-val .u{font-size:.85rem;font-weight:500;color:var(--text3);margin-left:.15rem;}
+.metric-sub{font-size:.75rem;color:var(--text3);margin-top:.4rem;}
+.metric-ico{font-size:1.2rem;margin-bottom:.4rem;}
+
+/* FORM */
+.fg{margin-bottom:1.2rem;}
+.flbl{display:block;font-size:.85rem;font-weight:600;color:var(--text2);margin-bottom:.4rem;}
+.fhint{font-size:.75rem;color:var(--text3);margin-top:.3rem;}
+.finput,.fsel{width:100%;padding:.6rem .85rem;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:inherit;font-size:.9rem;color:var(--text);background:#fff;outline:none;transition:border-color .2s;}
+.finput:focus,.fsel:focus{border-color:var(--forest);box-shadow:0 0 0 3px rgba(20,69,47,.1);}
+.igrp{display:flex;gap:.5rem;}
+.igrp .finput{flex:1;}
+.ubadge{padding:.6rem .85rem;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:.8rem;font-weight:600;color:var(--text2);white-space:nowrap;}
+
+/* RANGE */
+.rng-row{display:flex;align-items:center;gap:1rem;}
+.rng{flex:1;-webkit-appearance:none;height:6px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;outline:none;}
+.rng::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;background:var(--forest);border-radius:50%;cursor:pointer;transition:transform .15s;}
+.rng::-webkit-slider-thumb:hover{transform:scale(1.15);}
+.rng-val{min-width:45px;text-align:right;font-size:.85rem;font-weight:700;color:var(--forest);}
+
+/* BUTTONS */
+.btn{padding:.65rem 1.25rem;border-radius:var(--radius-sm);border:none;cursor:pointer;font-family:inherit;font-size:.85rem;font-weight:700;transition:all .2s;display:inline-flex;align-items:center;justify-content:center;gap:.5rem;}
+.btn-primary{background:var(--forest);color:#fff;}
+.btn-primary:hover{background:var(--forest2);transform:translateY(-1px);box-shadow:var(--shadow);}
+.btn-sec{background:var(--surface2);color:var(--forest);border:1px solid var(--border);}
+.btn-sec:hover{background:var(--border);}
+.btn-blue{background:var(--water);color:#fff;}
+.btn-blue:hover{background:var(--water2);}
+
+/* BADGE */
+.badge{display:inline-flex;align-items:center;gap:.3rem;padding:.25rem .75rem;border-radius:20px;font-size:.75rem;font-weight:700;letter-spacing:.02em;}
+.badge .dot{width:8px;height:8px;border-radius:50%;background:currentColor;}
+.badge-sim{background:#fef3c7;color:#92400e; border:1px solid #fde68a;}
+.badge-live{background:#dcfce7;color:#14532d; border:1px solid #bbf7d0;}
+
+/* TABLE */
+.dtbl{width:100%;border-collapse:collapse;font-size:.85rem;}
+.dtbl th{text-align:left;padding:.6rem .8rem;background:var(--surface2);color:var(--forest);font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid var(--border);}
+.dtbl td{padding:.6rem .8rem;border-bottom:1px solid var(--border);color:var(--text2);}
+.dtbl tr:hover td{background:var(--surface2);}
+
+/* RWH REC CARDS */
+.rec{display:flex;gap:1rem;padding:1.2rem;background:#fff;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:1rem;}
+.rec-ico{width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;}
+.rec-ico.g{background:#dcfce7;} .rec-ico.b{background:#dbeafe;} .rec-ico.a{background:#fef3c7;}
+.rec-title{font-weight:700;font-size:.95rem;color:var(--text);margin-bottom:.2rem;}
+.rec-desc{font-size:.82rem;color:var(--text2);line-height:1.5;}
+.rec-spec{margin-top:.5rem;padding:.4rem .7rem;background:var(--surface2);border-radius:5px;font-size:.8rem;color:var(--forest);font-weight:600;}
+
+/* RETURN PERIOD SELECTOR */
+.rp-wrap{display:flex;gap:.5rem;flex-wrap:wrap;}
+.rp-btn{padding:.4rem .9rem;border:1px solid var(--border);border-radius:20px;background:#fff;cursor:pointer;font-size:.85rem;font-weight:600;color:var(--text2);transition:all .2s;font-family:inherit;}
+.rp-btn:hover{border-color:var(--forest);}
+.rp-btn.active{background:var(--forest);border-color:var(--forest);color:#fff;}
+
+/* COORD BOX */
+.coord-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.8rem 1rem;display:flex;align-items:center;gap:1.2rem;font-size:.85rem;}
+.coord-kv{display:flex;flex-direction:column;gap:.1rem;}
+.ck{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);font-weight:700;}
+.cv{font-weight:700;color:var(--text);font-size:1rem;}
+.div-v{width:1px;height:32px;background:var(--border);}
+
+/* C-FACTOR BAR */
+.c-bar{background:var(--forest);color:#fff;border-radius:8px;padding:1rem 1.2rem;display:flex;justify-content:space-between;align-items:center;}
+.c-val{font-size:1.7rem;font-weight:700;letter-spacing:-.02em;}
+
+/* VISUAL BAR (CATCHMENT VS SITE) */
+.area-viz-wrap {width: 100%; background: var(--surface2); border-radius: 6px; height: 16px; overflow: hidden; position: relative; border: 1px solid var(--border); margin-top: .5rem;}
+.area-viz-fill {height: 100%; background: var(--water); transition: width 0.3s ease;}
+
+/* CHART CONTAINER */
+.ch-wrap{position:relative;height:240px;}
+.ch-sm{height:180px;}
+
+/* PROJECTION ROW */
+.proj-row{display:grid;grid-template-columns:90px 1fr 1fr 1fr;gap:.5rem;padding:.6rem 0;border-bottom:1px solid var(--border);align-items:center;font-size:.85rem;}
+.proj-row.hdr{font-weight:700;color:var(--text3);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;}
+.vg{color:var(--green);font-weight:700;} .vw{color:#d97706;font-weight:700;} .vb{color:var(--red);font-weight:700;}
+
+/* FORMULA BOX */
+.fml{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:.8rem 1rem;font-family:monospace;font-size:.85rem;color:var(--forest);margin-top:.8rem;line-height:1.6;}
+
+/* REPORT HEADER */
+.rpt-hdr{background:linear-gradient(135deg,var(--forest) 0%,#0a2e1d 100%);color:#fff;border-radius:var(--radius);padding:1.75rem;margin-bottom:1.5rem;}
+.rpt-title{font-size:1.8rem;font-weight:700;margin-bottom:.3rem;letter-spacing:-.02em;}
+.rpt-sub{font-size:.85rem;opacity:.8;}
+
+/* SECTION HEADER */
+.sec-hdr{margin-bottom:1.5rem;}
+.sec-title{font-size:1.5rem;font-weight:700;color:var(--forest);letter-spacing:-.02em;}
+.sec-desc{font-size:.9rem;color:var(--text2);margin-top:.3rem;}
+
+/* LOADING OVERLAY */
+.loading{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:1rem;color:#fff;}
+.loading.show{display:flex;}
+.spin{width:42px;height:42px;border:4px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* TOAST */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--forest);color:#fff;padding:.8rem 1.2rem;border-radius:8px;font-size:.85rem;font-weight:600;box-shadow:var(--shadow-lg);z-index:500;transform:translateY(80px);opacity:0;transition:all .3s;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+/* SPECIES GRID */
+.spc-card{padding:.8rem;background:var(--surface2);border-radius:8px;font-size:.8rem;}
+.spc-name{font-weight:700;color:var(--text);}
+.spc-sci{font-style:italic;color:var(--text3);font-size:.75rem;}
+.spc-role{color:var(--forest);font-size:.75rem;font-weight:700;margin:.2rem 0;}
+.spc-ben{color:var(--text2);font-size:.75rem;}
+
+/* ILI CARD */
+.ili-card{padding:1.2rem;background:var(--surface2);border-radius:var(--radius-sm);text-align:center;}
+.ili-val{font-size:1.5rem;font-weight:700;color:var(--text);letter-spacing:-.02em;}
+
+</style>
+</head>
+<body>
+
+<div class="loading" id="loading">
+  <div class="spin"></div>
+  <div style="font-size:1rem; font-weight: 700;">Fetching live climate & topographical data…</div>
+  <div style="font-size:.85rem;opacity:.8;" id="lmsg">Connecting to Open-Meteo…</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<header class="hdr">
+  <div class="hdr-brand">
+    <div class="hdr-icon">🌿</div>
+    <div>
+      <h1>RainSite Intelligence™</h1>
+      <p>Integrated Landscape Intelligence · GDHI Framework</p>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <span class="badge badge-sim" id="globalBadge"><span class="dot"></span>Simulated Data</span>
+    <button class="btn btn-sec" style="font-size:.8rem; padding: .4rem .8rem; background: rgba(255,255,255,0.1); color: white; border-color: rgba(255,255,255,0.2);" onclick="window.print()">⬇ Export Report</button>
+  </div>
+</header>
+
+<nav class="snav">
+  <button class="snav-btn active" id="sb1" onclick="goTab(1)"><span class="snum">1</span>Site Setup</button>
+  <button class="snav-btn" id="sb2" onclick="goTab(2)"><span class="snum">2</span>Rainfall Intelligence</button>
+  <button class="snav-btn" id="sb3" onclick="goTab(3)"><span class="snum">3</span>Engineering Analysis</button>
+  <button class="snav-btn" id="sb4" onclick="goTab(4)"><span class="snum">4</span>Strategic Report</button>
+</nav>
+
+<main class="main">
+
+<div class="panel active" id="tab1">
+  <div class="sec-hdr">
+    <div class="sec-title">🗺 Configure Your Site</div>
+    <div class="sec-desc">Enter your coordinates and site parameters. The system pulls 25 years of climate, soil &amp; ecological intelligence for your exact location.</div>
+  </div>
+
+  <div class="g2">
+    <div style="display:flex;flex-direction:column;gap:1.5rem;">
+
+      <div class="card">
+        <div class="card-title">📍 Location & Topography</div>
+        <div class="card-sub">Enter GPS coordinates or fetch live elevation data</div>
+        <div class="fg">
+          <label class="flbl">Project / Site Name</label>
+          <input class="finput" id="siteName" value="Sample Site — Bengaluru" placeholder="e.g. Hasiru Harmony Phase 1">
+        </div>
+        <div class="g3" style="gap:.8rem;">
+          <div class="fg">
+            <label class="flbl">Latitude</label>
+            <input type="number" class="finput" id="lat" value="12.9716" step=".0001">
+          </div>
+          <div class="fg">
+            <label class="flbl">Longitude</label>
+            <input type="number" class="finput" id="lon" value="77.5946" step=".0001">
+          </div>
+          <div class="fg">
+            <label class="flbl">Elevation (m)</label>
+            <input type="number" class="finput" id="elev" value="920" step="1">
+          </div>
+        </div>
+        
+        <div class="coord-box" id="coordBox">
+          <span style="font-size:1.3rem;">📌</span>
+          <div class="coord-kv"><span class="ck">Latitude</span><span class="cv" id="dLat">12.9716°N</span></div>
+          <div class="div-v"></div>
+          <div class="coord-kv"><span class="ck">Longitude</span><span class="cv" id="dLon">77.5946°E</span></div>
+          <div class="div-v"></div>
+          <div class="coord-kv"><span class="ck">Elevation</span><span class="cv" id="dElev">920 m</span></div>
+        </div>
+        <div style="display:flex;gap:.8rem;margin-top:1.2rem;">
+          <button class="btn btn-blue" onclick="fetchLive()" style="flex:1;">🌐 Fetch Live Coordinates Data</button>
+          <button class="btn btn-sec" onclick="useSim()" style="flex:1;">📊 Use Sample Data</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📐 Project Size & Catchment</div>
+        <div class="card-sub">Define the total project size vs. the specific area actively harvested</div>
+        
+        <div class="fg">
+          <label class="flbl">Project Typology</label>
+          <select class="fsel" id="projType" onchange="applyDefaults()">
+            <option value="villa">Residential — Villa / Independent House</option>
+            <option value="campus" selected>Residential — Campus / Layout (1–10 acres)</option>
+            <option value="institutional">Institutional — School / Hospital / Campus</option>
+            <option value="resort">Resort / Hospitality</option>
+            <option value="public">Public Infrastructure / Park</option>
+            <option value="industrial">Industrial / Commercial</option>
+          </select>
+        </div>
+
+        <div class="g2" style="gap:1rem;">
+          <div class="fg">
+            <label class="flbl">Total Project Size</label>
+            <div class="igrp">
+              <input type="number" class="finput" id="totalArea" value="12000" oninput="cvtArea()">
+              <span class="ubadge" id="uT">m²</span>
+            </div>
+          </div>
+          <div class="fg">
+            <label class="flbl">Active Catchment Area</label>
+            <div class="igrp">
+              <input type="number" class="finput" id="siteArea" value="10000" oninput="cvtArea()">
+              <select class="fsel" id="areaUnit" style="width:70px; padding: .6rem .4rem;" onchange="cvtArea()">
+                <option value="sqm">m²</option>
+                <option value="acres">Ac</option>
+                <option value="hectares">Ha</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <div class="fhint" style="margin-top:0;" id="areaConvHint">Catchment: ≈ 2.47 Acres · 1.00 Hectare</div>
+        
+        <div style="margin-top: 1rem;">
+          <div style="display:flex; justify-content:space-between; font-size:.75rem; font-weight:700; color:var(--text3);">
+            <span>Catchment Utilization</span>
+            <span id="vizPct">83%</span>
+          </div>
+          <div class="area-viz-wrap">
+            <div class="area-viz-fill" id="vizFill" style="width: 83%;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:1.5rem;">
+
+      <div class="card">
+        <div class="card-title">🏗 Land Use Breakdown (Catchment)</div>
+        <div class="card-sub">Adjust surface composition. Affects runoff coefficient (C) and harvest potential.</div>
+
+        <div class="fg">
+          <label class="flbl">🏛 Built / Hard Surface <small style="opacity:.6; font-weight:normal;">(C=0.90)</small> <span class="rng-val" id="pHard" style="float:right;">30%</span></label>
+          <div class="rng-row"><input type="range" class="rng" id="sHard" min="0" max="100" value="30" oninput="calcC()"></div>
+        </div>
+        <div class="fg">
+          <label class="flbl">🌱 Lawn / Soft Landscape <small style="opacity:.6; font-weight:normal;">(C=0.35)</small> <span class="rng-val" id="pSoft" style="float:right;">40%</span></label>
+          <div class="rng-row"><input type="range" class="rng" id="sSoft" min="0" max="100" value="40" oninput="calcC()"></div>
+        </div>
+        <div class="fg">
+          <label class="flbl">🌳 Native / Deep-Root Planting <small style="opacity:.6; font-weight:normal;">(C=0.15)</small> <span class="rng-val" id="pNative" style="float:right;">20%</span></label>
+          <div class="rng-row"><input type="range" class="rng" id="sNative" min="0" max="100" value="20" oninput="calcC()"></div>
+        </div>
+        <div class="fg">
+          <label class="flbl">💧 Water / Open Soil <small style="opacity:.6; font-weight:normal;">(C=0.05)</small> <span class="rng-val" id="pWater" style="float:right;">10%</span></label>
+          <div class="rng-row"><input type="range" class="rng" id="sWater" min="0" max="100" value="10" oninput="calcC()"></div>
+        </div>
+
+        <div class="c-bar" style="margin-top: 1.5rem;">
+          <div>
+            <div style="font-size:.75rem;opacity:.8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.2rem;">Composite Runoff Coeff. (C)</div>
+            <div class="c-val" id="cVal">0.43</div>
+          </div>
+          <div style="text-align:right;font-size:.85rem;opacity:.9; font-weight: 600;" id="cRating">Moderate · Good balance<br><span style="opacity:.7;font-size:.75rem; font-weight:normal;">Lower = more infiltration</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🪨 Soil Profile &amp; Demand</div>
+        <div class="card-sub">Select a preset to load typical soil data, or manually manage specific values.</div>
+        
+        <div class="fg">
+          <label class="flbl">Soil Preset Loader</label>
+          <select class="fsel" id="soilType" onchange="updateSoil()">
+            <option value="red_laterite" selected>Red Laterite (Bengaluru Plateau)</option>
+            <option value="black_cotton">Black Cotton Soil (North Karnataka)</option>
+            <option value="alluvial">Alluvial (River Plains)</option>
+            <option value="sandy_loam">Sandy Loam</option>
+            <option value="clay">Heavy Clay</option>
+            <option value="rocky">Rocky / Shallow Soil</option>
+          </select>
+        </div>
+        
+        <div class="g2" style="gap:1rem; padding: 1rem; background: var(--surface2); border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 1.2rem;">
+          <div>
+            <label class="flbl" style="font-size:.8rem;">Percolation Rate (mm/hr)</label>
+            <input type="number" class="finput" id="inPerc" value="18" step="1" style="padding:.4rem .6rem;">
+          </div>
+          <div>
+            <label class="flbl" style="font-size:.8rem;">Field Capacity (%)</label>
+            <input type="number" class="finput" id="inFC" value="35" step="1" style="padding:.4rem .6rem;">
+          </div>
+        </div>
+
+        <div class="fg" style="margin-bottom:0;">
+          <label class="flbl">Estimated Daily Water Demand</label>
+          <div class="igrp">
+            <input type="number" class="finput" id="demand" value="50000">
+            <span class="ubadge">Liters / day</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:flex-end;margin-top:1.5rem;">
+    <button class="btn btn-primary" onclick="runAnalysis()" style="font-size: 1rem; padding: .8rem 1.5rem;">Generate GDHI Intelligence →</button>
+  </div>
+</div>
+
+
+<div class="panel" id="tab2">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+    <div class="sec-hdr" style="margin-bottom:0;">
+      <div class="sec-title">🌧 25-Year Rainfall Intelligence</div>
+      <div class="sec-desc">Historical climate profile, annual maximum series, design storm parameters &amp; soil data.</div>
+    </div>
+    <span class="badge badge-sim" id="t2Badge"><span class="dot"></span>Sample / Simulated Data</span>
+  </div>
+
+  <div class="g4" style="margin-bottom:1.5rem;">
+    <div class="metric green"><div class="metric-ico">🌧</div><div class="metric-lbl">25-Yr Avg Annual</div><div class="metric-val" id="mAvg">— <span class="u">mm</span></div><div class="metric-sub">Local baseline</div></div>
+    <div class="metric blue"><div class="metric-ico">📈</div><div class="metric-lbl">Highest Year</div><div class="metric-val" id="mHigh">— <span class="u">mm</span></div><div class="metric-sub" id="mHighLbl">—</div></div>
+    <div class="metric amber"><div class="metric-ico">📉</div><div class="metric-lbl">Lowest Year</div><div class="metric-val" id="mLow">— <span class="u">mm</span></div><div class="metric-sub" id="mLowLbl">—</div></div>
+    <div class="metric blue"><div class="metric-ico">⛈</div><div class="metric-lbl">Max Daily Event</div><div class="metric-val" id="mMaxDay">— <span class="u">mm</span></div><div class="metric-sub" id="mMaxDayLbl">—</div></div>
+  </div>
+
+  <div class="g2" style="margin-bottom:1.5rem;">
+    <div class="card">
+      <div class="card-title">Monthly Average Rainfall</div>
+      <div class="card-sub">25-year monthly mean distribution</div>
+      <div class="ch-wrap"><canvas id="chMonthly"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Annual Rainfall Trend 1999–2024</div>
+      <div class="card-sub">Year-by-year total with 5-year moving average</div>
+      <div class="ch-wrap"><canvas id="chAnnual"></canvas></div>
+    </div>
+  </div>
+
+  <div class="g2" style="margin-bottom:1.5rem;">
+    <div class="card">
+      <div class="card-title">Annual Maximum Series (AMS)</div>
+      <div class="card-sub">Highest single-day rainfall per year — ranked for frequency analysis</div>
+      <div style="max-height:270px;overflow-y:auto; border: 1px solid var(--border); border-radius: 6px;">
+        <table class="dtbl"><thead><tr><th>Rank</th><th>Year</th><th>Max Daily (mm)</th><th>Return Period</th></tr></thead>
+        <tbody id="amsTbody"></tbody></table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Design Storm Parameters</div>
+      <div class="card-sub">Select a return period to set the engineering design event for your site</div>
+      <div class="fg">
+        <label class="flbl" style="margin-bottom:.6rem;">Return Period</label>
+        <div class="rp-wrap">
+          <button class="rp-btn" onclick="setRP(2,this)">2-Year</button>
+          <button class="rp-btn active" onclick="setRP(5,this)">5-Year</button>
+          <button class="rp-btn" onclick="setRP(10,this)">10-Year</button>
+          <button class="rp-btn" onclick="setRP(25,this)">25-Year</button>
+          <button class="rp-btn" onclick="setRP(50,this)">50-Year</button>
+        </div>
+        <div class="fhint" id="rpHint" style="margin-top:.5rem; font-weight: 600;">Recommended for RWH storage tanks and primary collection.</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem;">
+        <div style="text-align:center;padding:1rem;background:var(--surface2);border-radius:8px; border: 1px solid var(--border);">
+          <div style="font-size:.75rem;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Design Rainfall</div>
+          <div style="font-size:2rem;font-weight:700;color:var(--forest);" id="dRain">—</div>
+          <div style="font-size:.8rem;color:var(--text2); font-weight: 500;">mm / day</div>
+        </div>
+        <div style="text-align:center;padding:1rem;background:var(--surface2);border-radius:8px; border: 1px solid var(--border);">
+          <div style="font-size:.75rem;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.05em;">1-hr Intensity</div>
+          <div style="font-size:2rem;font-weight:700;color:var(--water);" id="dInt">—</div>
+          <div style="font-size:.8rem;color:var(--text2); font-weight: 500;">mm / hr</div>
+        </div>
+      </div>
+      <div class="fml" id="dFormula">Run analysis to compute design storm parameters →</div>
+    </div>
+  </div>
+
+  <div class="g3" style="margin-bottom:1.5rem;">
+    <div class="card">
+      <div class="card-title">🪨 Soil Profile</div>
+      <div class="card-sub" id="soilLbl">Custom Data</div>
+      <div class="ch-wrap ch-sm"><canvas id="chSoil"></canvas></div>
+      <div style="margin-top:1rem;font-size:.85rem;">
+        <div style="display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:1px solid var(--border);"><span style="color:var(--text3);">Percolation Rate</span><strong id="sPerc">18 mm/hr</strong></div>
+        <div style="display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:1px solid var(--border);"><span style="color:var(--text3);">Field Capacity</span><strong id="sFC">35%</strong></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💧 Monthly Volume Balance</div>
+      <div class="card-sub">Harvestable volume vs estimated demand</div>
+      <div class="ch-wrap ch-sm"><canvas id="chVolume"></canvas></div>
+      <div style="margin-top:1rem;display:flex;gap:1.2rem;font-size:.85rem; justify-content:space-between;">
+        <div><div style="color:var(--text3);font-size:.75rem;font-weight:600;">Annual Harvest</div><div style="font-weight:700;color:var(--forest);font-size:1.1rem;" id="annHarv">—</div></div>
+        <div><div style="color:var(--text3);font-size:.75rem;font-weight:600;">Peak Month</div><div style="font-weight:700;color:var(--water);font-size:1.1rem;">Sep</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🌡 Evapotranspiration</div>
+      <div class="card-sub">Hargreaves method (ET₀ vs rainfall)</div>
+      <div class="ch-wrap ch-sm"><canvas id="chET"></canvas></div>
+      <div style="margin-top:1rem;font-size:.85rem;">
+        <div style="display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:1px solid var(--border);"><span style="color:var(--text3);">Annual ET₀</span><strong style="font-size:1.1rem;">~1,180 mm</strong></div>
+        <div style="display:flex;justify-content:space-between;padding:.4rem 0;"><span style="color:var(--text3);">Deficit Gap</span><strong id="etGap" style="color:var(--red); font-size:1.1rem;">~208 mm</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;margin-top:2rem;">
+    <button class="btn btn-sec" onclick="goTab(1)">← Site Setup</button>
+    <button class="btn btn-primary" onclick="goTab(3)">Engineering Analysis →</button>
+  </div>
+</div>
+
+
+<div class="panel" id="tab3">
+  <div class="sec-hdr">
+    <div class="sec-title">⚙️ Engineering Analysis</div>
+    <div class="sec-desc">Peak runoff, RWH infrastructure sizing, water balance, future climate projections — with formulas.</div>
+  </div>
+
+  <div class="g4" style="margin-bottom:1.5rem;">
+    <div class="metric green"><div class="metric-ico">⛰</div><div class="metric-lbl">Peak Runoff (Q)</div><div class="metric-val" id="eQ">—</div><div class="metric-sub">Rational Method</div></div>
+    <div class="metric blue"><div class="metric-ico">🪣</div><div class="metric-lbl">Harvest / Year</div><div class="metric-val" id="eHarv">—</div><div class="metric-sub">KL / year</div></div>
+    <div class="metric amber"><div class="metric-ico">🏗</div><div class="metric-lbl">Recharge Pit Vol.</div><div class="metric-val" id="ePit">—</div><div class="metric-sub">m³ (design storm)</div></div>
+    <div class="metric green"><div class="metric-ico">🌊</div><div class="metric-lbl">Self-Sufficiency</div><div class="metric-val" id="eSelf">—</div><div class="metric-sub">% annual demand met</div></div>
+  </div>
+
+  <div class="g2" style="margin-bottom:1.5rem;">
+    <div class="card">
+      <div class="card-title">📐 Peak Runoff — Rational Method</div>
+      <div class="card-sub">Maximum rate of water flow your site must manage during the design storm</div>
+
+      <div style="background:var(--surface2);border-radius:8px;padding:1.2rem;margin-bottom:1rem;text-align:center; border: 1px solid var(--border);">
+        <div style="font-size:1.2rem;font-weight:700;color:var(--forest);margin-bottom:.8rem;letter-spacing:1px;">Q = C × i × A ÷ 360</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.8rem;font-size:.85rem;">
+          <div style="padding:.6rem;background:#fff;border-radius:6px; border: 1px solid var(--border);">
+            <div style="color:var(--text3);margin-bottom:.2rem;font-weight:600;">C (Coeff)</div>
+            <div style="font-weight:700;font-size:1.1rem;" id="eC">0.43</div>
+          </div>
+          <div style="padding:.6rem;background:#fff;border-radius:6px; border: 1px solid var(--border);">
+            <div style="color:var(--text3);margin-bottom:.2rem;font-weight:600;">i (mm/hr)</div>
+            <div style="font-weight:700;font-size:1.1rem;" id="eI">—</div>
+          </div>
+          <div style="padding:.6rem;background:#fff;border-radius:6px; border: 1px solid var(--border);">
+            <div style="color:var(--text3);margin-bottom:.2rem;font-weight:600;">A (Ha)</div>
+            <div style="font-weight:700;font-size:1.1rem;" id="eA">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:var(--forest);color:#fff;border-radius:8px;padding:1.2rem;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:.75rem;opacity:.8;margin-bottom:.2rem;text-transform:uppercase;letter-spacing:.08em; font-weight:700;">Peak Runoff</div>
+          <div style="font-size:2.2rem;font-weight:700;letter-spacing:-.02em;" id="qDisp">—</div>
+          <div style="font-size:.8rem;opacity:.9;font-weight:500;">m³ / second</div>
+        </div>
+        <div style="text-align:right;font-size:.85rem;opacity:.9;font-weight:600;max-width:40%;" id="qCtx">—</div>
+      </div>
+
+      <div style="margin-top:1rem;padding:1rem;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;font-size:.85rem;color:#92400e;line-height:1.5;">
+        <strong>Implication:</strong> Drainage infrastructure must handle at least <strong id="qPlain">—</strong> per hour during a design storm. Every 10% increase in native planting reduces this figure by ~8–12%.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🪣 Infrastructure Sizing</div>
+      <div class="card-sub">Recommended pit, tank, and French drain specifications</div>
+      <div id="rwhRecs">
+        <div class="rec"><div class="rec-ico g">🕳</div><div><div class="rec-title">Recharge Pits</div><div class="rec-desc">Percolation pits at low points to manage peak inflow and recharge groundwater.</div><div class="rec-spec" id="pitSpec">Run analysis to generate →</div></div></div>
+        <div class="rec"><div class="rec-ico b">🏗</div><div><div class="rec-title">Sealed Storage Tank</div><div class="rec-desc">Lined sump or tank for harvested water — sized for dry-season continuity.</div><div class="rec-spec" id="tankSpec">Run analysis to generate →</div></div></div>
+        <div class="rec"><div class="rec-ico a">🌿</div><div><div class="rec-title">French Drain / Bioswale</div><div class="rec-desc">Linear overflow channel for peak-event surplus. Doubles as pollinator corridor.</div><div class="rec-spec" id="drainSpec">Run analysis to generate →</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g2" style="margin-bottom:1.5rem;">
+    <div class="card">
+      <div class="card-title">⚖️ Annual Water Balance</div>
+      <div class="card-sub">Monthly supply vs demand — identifies surplus and deficit months</div>
+      <div class="ch-wrap"><canvas id="chBalance"></canvas></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-top:1.2rem;text-align:center;font-size:.85rem;">
+        <div style="padding:.8rem;background:var(--surface2);border-radius:6px; border:1px solid var(--border);"><div style="color:var(--text3);font-size:.75rem;font-weight:700;">Annual Supply</div><div style="font-weight:700;color:var(--forest);font-size:1.1rem;margin-top:.2rem;" id="aSupply">—</div></div>
+        <div style="padding:.8rem;background:var(--surface2);border-radius:6px; border:1px solid var(--border);"><div style="color:var(--text3);font-size:.75rem;font-weight:700;">Annual Demand</div><div style="font-weight:700;color:var(--water);font-size:1.1rem;margin-top:.2rem;" id="aDemand">—</div></div>
+        <div style="padding:.8rem;background:var(--surface2);border-radius:6px; border:1px solid var(--border);"><div style="color:var(--text3);font-size:.75rem;font-weight:700;">Surplus / Deficit</div><div style="font-weight:700;font-size:1.1rem;margin-top:.2rem;" id="aBalance">—</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔮 Future Climate Projections</div>
+      <div class="card-sub">+7% storm intensity per decade (IPCC AR6 South Asia)</div>
+      <div class="proj-row hdr"><div>Horizon</div><div>Avg Rainfall</div><div>Harvest</div><div>Risk</div></div>
+      <div class="proj-row"><div><strong>Now</strong></div><div id="p0r">—</div><div id="p0h">—</div><div class="vg">✓ Baseline</div></div>
+      <div class="proj-row"><div><strong>+5 yr</strong></div><div id="p5r">—</div><div id="p5h">—</div><div class="vg" id="p5x">—</div></div>
+      <div class="proj-row"><div><strong>+10 yr</strong></div><div id="p10r">—</div><div id="p10h">—</div><div class="vw" id="p10x">—</div></div>
+      <div class="proj-row" style="border-bottom:none;"><div><strong>+25 yr</strong></div><div id="p25r">—</div><div id="p25h">—</div><div class="vb" id="p25x">—</div></div>
+      <div class="ch-wrap" style="height:140px;margin-top:1rem;"><canvas id="chProj"></canvas></div>
+    </div>
+  </div>
+
+  <div class="g2" style="margin-bottom:1.5rem;">
+    <div class="card">
+      <div class="card-title">🌿 Irrigation &amp; ET₀ Intelligence</div>
+      <div class="card-sub">Hargreaves ET₀ model — irrigation demand with vs without native planting</div>
+      <div class="fml" style="text-align:center;">ET₀ = 0.0023 × Rₐ × (T<sub>mean</sub> + 17.8) × √(T<sub>max</sub> − T<sub>min</sub>)</div>
+      <div class="ch-wrap" style="margin-top:1rem;"><canvas id="chIrrig"></canvas></div>
+      <div style="margin-top:1rem;font-size:.85rem;color:var(--text2); font-weight:500;">
+        With <strong id="nativePctLbl">20%</strong> native cover: estimated irrigation savings of <strong id="irrigSav" style="color:var(--forest);">~35–40%</strong> vs. conventional turf.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🦋 Native Species Recommendations</div>
+      <div class="card-sub">Deep-root, percolation-boosting selections for the bioregion</div>
+      <div id="speciesGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;"></div>
+      <div style="margin-top:1rem;font-size:.8rem;color:var(--text3);line-height:1.5;">Species selected for low post-establishment water demand and native pollinator support. Data: GBIF.</div>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;margin-top:2rem;">
+    <button class="btn btn-sec" onclick="goTab(2)">← Rainfall Intelligence</button>
+    <button class="btn btn-primary" onclick="goTab(4)">Generate Strategic Report →</button>
+  </div>
+</div>
+
+
+<div class="panel" id="tab4">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+    <div class="sec-hdr" style="margin-bottom:0;">
+      <div class="sec-title">📋 Strategic Site Report</div>
+      <div class="sec-desc">Client-ready summary of your site's rainwater intelligence, specifications &amp; recommendations.</div>
+    </div>
+    <button class="btn btn-primary" onclick="window.print()">⬇ Print / Download</button>
+  </div>
+
+  <div class="rpt-hdr">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <div style="font-size:.75rem;opacity:.8;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.4rem; font-weight:700;">Greenscape Designz · RainSite Intelligence™</div>
+        <div class="rpt-title" id="rptName">Sample Site — Bengaluru</div>
+        <div class="rpt-sub" id="rptMeta">12.9716°N, 77.5946°E · 10,000 m² · Residential Campus</div>
+      </div>
+      <div style="display:flex;gap:2.5rem;align-items:center;">
+        <div style="text-align:center;"><div style="font-size:2.5rem;font-weight:700;letter-spacing:-.02em;" id="rptScore">—</div><div style="font-size:.75rem;opacity:.8;font-weight:600;text-transform:uppercase;">GDHI Score</div></div>
+        <div style="text-align:center;"><div style="font-size:2.5rem;font-weight:700;letter-spacing:-.02em;" id="rptSelf">—</div><div style="font-size:.75rem;opacity:.8;font-weight:600;text-transform:uppercase;">Self-Sufficiency</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g4" style="margin-bottom:1.5rem;">
+    <div class="metric green"><div class="metric-lbl">Annual Harvest Potential</div><div class="metric-val" id="r1">—</div><div class="metric-sub">Kilolitres / year</div></div>
+    <div class="metric blue"><div class="metric-lbl">Peak Runoff Rate</div><div class="metric-val" id="r2">—</div><div class="metric-sub">m³/sec (design storm)</div></div>
+    <div class="metric amber"><div class="metric-lbl">Recharge Pit Volume</div><div class="metric-val" id="r3">—</div><div class="metric-sub">m³ total</div></div>
+    <div class="metric green"><div class="metric-lbl">Storage Tank Needed</div><div class="metric-val" id="r4">—</div><div class="metric-sub">KL capacity</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:1.5rem;">
+    <div class="card-title">🎯 Priority Recommendations</div>
+    <div class="card-sub">What your site needs, explained simply based on the engineering analysis.</div>
+    <div id="rptRecs" style="margin-top:1rem;"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:1.5rem;">
+    <div class="card-title">📏 Design Specifications Summary</div>
+    <div class="card-sub">With formulas and input values — suitable for DPRs and tender documents</div>
+    <div style="overflow-x:auto; border: 1px solid var(--border); border-radius: 6px;">
+      <table class="sp-tbl"><thead><tr><th>Parameter</th><th>Formula / Method</th><th>Inputs</th><th>Result</th></tr></thead>
+      <tbody id="specsTbody"></tbody></table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🏆 ILI™ Framework Alignment</div>
+    <div class="card-sub">Integrated Landscape Intelligence™ — Greenscape Designz IP · GDHI™ scoring</div>
+    <div id="iliGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem;margin-top:1rem;"></div>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;margin-top:2rem;">
+    <button class="btn btn-sec" onclick="goTab(3)">← Engineering Analysis</button>
+    <button class="btn btn-primary" onclick="window.print()">⬇ Download Full Report</button>
+  </div>
+</div>
+
+</main>
+
+<script>
+// ============================================================
+// STATIC DATA & CONFIG
+// ============================================================
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const YEARS25 = Array.from({length:25},(_,i)=>1999+i);
+const BASE_MONTHLY = [2,8,14,42,116,88,119,139,210,178,61,16];
+const ET_MONTHLY   = [95,100,135,145,130,85,65,60,70,90,105,100];
+
+// Soil presets to populate manageable fields
+const SOILS = {
+  red_laterite: {n:'Red Laterite',perc:18,fc:35,sand:45,silt:27,clay:28},
+  black_cotton: {n:'Black Cotton Soil',perc:4,fc:42,sand:20,silt:30,clay:50},
+  alluvial:     {n:'Alluvial',perc:25,fc:32,sand:55,silt:30,clay:15},
+  sandy_loam:   {n:'Sandy Loam',perc:32,fc:28,sand:65,silt:25,clay:10},
+  clay:         {n:'Heavy Clay',perc:2,fc:50,sand:10,silt:25,clay:65},
+  rocky:        {n:'Rocky / Shallow',perc:45,fc:15,sand:70,silt:15,clay:15}
+};
+
+const SPECIES = [
+  {n:'Honge / Pongam',s:'Pongamia pinnata',r:'Canopy Tree',b:'Deep roots, N-fixing',i:'🌳'},
+  {n:'Neem',s:'Azadirachta indica',r:'Canopy Tree',b:'Deep taproot, drought tolerant',i:'🌿'},
+  {n:'Rain Tree',s:'Samanea saman',r:'Canopy Tree',b:'Large canopy slows runoff',i:'🌲'},
+  {n:'Vetiver Grass',s:'Chrysopogon zizanioides',r:'Ground Cover',b:'Roots 3–4m deep, excellent percolation',i:'🌾'},
+  {n:'Indian Coral',s:'Erythrina variegata',r:'Mid-story',b:'Slope stabilisation',i:'🌸'},
+  {n:'Bermuda / Doob',s:'Cynodon dactylon',r:'Turf Alt.',b:'Drought tolerant, low C',i:'🍀'}
+];
+
+const RP_HINTS = {
+  2:'Sufficient for recharge pits — captures majority of annual events.',
+  5:'Recommended for RWH storage tanks and primary collection.',
+  10:'Standard for overflow drainage, bioswales, and storm drains.',
+  25:'Used for primary drainage protecting against severe flooding.',
+  50:'Critical infrastructure near waterbodies or steep slopes.'
+};
+
+// Global colors for charts
+const C_LIVE = {rain:'#14452f', harvest:'#0f5282', bg_rain:'rgba(20,69,47,.3)', bg_harv:'rgba(15,82,130,.7)'};
+const C_SIM = {rain:'#526b5f', harvest:'#4a6b82', bg_rain:'rgba(82,107,95,.3)', bg_harv:'rgba(74,107,130,.7)'};
+let cTheme = C_SIM; 
+let isSimulated = true;
+
+// ============================================================
+// STATE
+// ============================================================
+let ST = {
+  annualData:[], ams:[], compositeC:0.43, returnPeriod:5,
+  designRainfall:0, designIntensity:0, 
+  totalAreaSqm:12000, activeAreaSqm:10000, 
+  waterDemandLpd:50000,
+  analysisRun:false, calc:{}
+};
+
+let CHS = {};
+function dch(id){if(CHS[id]){CHS[id].destroy();delete CHS[id];}}
+
+// Chart global defaults to match new font
+Chart.defaults.font.family = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+Chart.defaults.color = '#738c80';
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded',()=>{
+  genSimData();
+  updateCoords();
+  calcC();
+  cvtArea();
+  updateSoil();
+  
+  // Event listeners
+  document.getElementById('lat').addEventListener('input',updateCoords);
+  document.getElementById('lon').addEventListener('input',updateCoords);
+  document.getElementById('elev').addEventListener('input',updateCoords);
+  document.getElementById('inPerc').addEventListener('input', () => { if(ST.analysisRun) doEngCalc(); });
+});
+
+// ============================================================
+// TAB NAV
+// ============================================================
+function goTab(n){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.snav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab'+n).classList.add('active');
+  document.getElementById('sb'+n).classList.add('active');
+  if(n===2&&ST.analysisRun)renderT2();
+  if(n===3&&ST.analysisRun)renderT3();
+  if(n===4&&ST.analysisRun)renderT4();
+  window.scrollTo(0,0);
+}
+
+// ============================================================
+// DATA GENERATION / HANDLING
+// ============================================================
+function genSimData(){
+  ST.annualData=[];
+  // Add a distinct offset so simulated data looks noticeably different from live BLR data
+  const simOffset = 0.65; 
+  const seeds=[1.0,0.82,1.12,0.67,1.05,0.78,1.28,0.91,1.03,0.88,1.15,0.72,1.09,0.84,1.22,0.76,0.99,1.18,0.83,1.07,0.71,1.25,0.94,1.01,0.87];
+  for(let y=0;y<25;y++){
+    const ym=seeds[y]*(0.92+Math.random()*0.16) * simOffset;
+    const months=BASE_MONTHLY.map(m=>Math.max(0,m*ym*(0.78+Math.random()*0.44)));
+    const total=Math.round(months.reduce((a,b)=>a+b,0));
+    const maxDay=Math.round(months[8]*0.38+Math.random()*months[8]*0.22);
+    ST.annualData.push({year:YEARS25[y],months,total,maxDay});
+  }
+  computeAMS();
+}
+
+function computeAMS(){
+  const a=ST.annualData.map(d=>({year:d.year,maxDay:d.maxDay})).sort((a,b)=>b.maxDay-a.maxDay);
+  const N=a.length;
+  ST.ams=a.map((d,i)=>({...d,rank:i+1,returnPeriod:((N+1)/(i+1)).toFixed(1)}));
+}
+
+function computeStorm(T){
+  const vals=ST.ams.map(d=>d.maxDay);
+  const mean=vals.reduce((a,b)=>a+b,0)/vals.length;
+  const sd=Math.sqrt(vals.reduce((a,b)=>a+Math.pow(b-mean,2),0)/vals.length);
+  const y_T=-Math.log(-Math.log(1-1/T));
+  const K_T=(y_T-0.5362)/1.0915;
+  const dr=Math.max(30,Math.round(mean+K_T*sd));
+  return {designRainfall:dr, designIntensity:Math.max(12,Math.round(dr*0.42))};
+}
+
+// ============================================================
+// FORM HELPERS
+// ============================================================
+function calcC(){
+  const h=+document.getElementById('sHard').value;
+  const s=+document.getElementById('sSoft').value;
+  const n=+document.getElementById('sNative').value;
+  const w=+document.getElementById('sWater').value;
+  document.getElementById('pHard').textContent=h+'%';
+  document.getElementById('pSoft').textContent=s+'%';
+  document.getElementById('pNative').textContent=n+'%';
+  document.getElementById('pWater').textContent=w+'%';
+  
+  const C=(h*0.90+s*0.35+n*0.15+w*0.05)/100;
+  ST.compositeC=Math.round(C*100)/100;
+  document.getElementById('cVal').textContent=ST.compositeC.toFixed(2);
+  
+  const r=C<0.25?'Excellent — very low runoff':C<0.45?'Moderate · Good balance':C<0.65?'High — increase native planting':'Very High — redesign surface mix';
+  document.getElementById('cRating').innerHTML=r+'<br><span style="opacity:.7;font-size:.75rem;font-weight:normal;">Lower = better water retention</span>';
+  if(document.getElementById('eC'))document.getElementById('eC').textContent=ST.compositeC.toFixed(2);
+}
+
+function cvtArea(){
+  const act = +document.getElementById('siteArea').value;
+  const tot = +document.getElementById('totalArea').value;
+  const u = document.getElementById('areaUnit').value;
+  
+  // Set UI label for total unit
+  document.getElementById('uT').textContent = u==='sqm'?'m²':u==='acres'?'Ac':'Ha';
+  
+  let actSqm=u==='sqm'?act:u==='acres'?act*4046.86:act*10000;
+  let totSqm=u==='sqm'?tot:u==='acres'?tot*4046.86:tot*10000;
+  
+  // Prevent active area from exceeding total
+  if(actSqm > totSqm) { actSqm = totSqm; document.getElementById('siteArea').value = tot; }
+  
+  ST.activeAreaSqm = actSqm;
+  ST.totalAreaSqm = totSqm;
+  
+  document.getElementById('areaConvHint').textContent=`Catchment: ≈ ${(actSqm/4046.86).toFixed(2)} Acres · ${(actSqm/10000).toFixed(2)} Hectares`;
+  
+  // Update Visual Bar
+  let pct = totSqm > 0 ? Math.round((actSqm / totSqm) * 100) : 0;
+  document.getElementById('vizPct').textContent = pct + '%';
+  document.getElementById('vizFill').style.width = pct + '%';
+  
+  if(document.getElementById('eA'))document.getElementById('eA').textContent=(actSqm/10000).toFixed(2);
+}
+
+function updateCoords(){
+  const lat=+document.getElementById('lat').value;
+  const lon=+document.getElementById('lon').value;
+  const elev=+document.getElementById('elev').value;
+  
+  document.getElementById('dLat').textContent=Math.abs(lat).toFixed(4)+(lat>=0?'°N':'°S');
+  document.getElementById('dLon').textContent=Math.abs(lon).toFixed(4)+(lon>=0?'°E':'°W');
+  document.getElementById('dElev').textContent=elev + ' m';
+}
+
+function updateSoil(){
+  const sKey = document.getElementById('soilType').value;
+  const s = SOILS[sKey];
+  // Auto-populate manageable inputs based on preset
+  document.getElementById('inPerc').value = s.perc;
+  document.getElementById('inFC').value = s.fc;
+}
+
+function applyDefaults(){
+  const t=document.getElementById('projType').value;
+  const D={villa:{t:600,a:500,u:'sqm',d:1500},campus:{t:12000,a:10000,u:'sqm',d:50000},institutional:{t:2.5,a:2,u:'hectares',d:120000},resort:{t:2,a:1.5,u:'hectares',d:80000},public:{t:5,a:5,u:'hectares',d:10000},industrial:{t:3,a:2.5,u:'hectares',d:60000}};
+  const def=D[t];
+  if(def){
+    document.getElementById('totalArea').value=def.t;
+    document.getElementById('siteArea').value=def.a;
+    document.getElementById('areaUnit').value=def.u;
+    document.getElementById('demand').value=def.d;
+    cvtArea();
+  }
+}
+
+function setRP(T,btn){
+  ST.returnPeriod=T;
+  document.querySelectorAll('.rp-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('rpHint').textContent=RP_HINTS[T]||'';
+  const s=computeStorm(T);
+  ST.designRainfall=s.designRainfall;
+  ST.designIntensity=s.designIntensity;
+  document.getElementById('dRain').textContent=s.designRainfall;
+  document.getElementById('dInt').textContent=s.designIntensity;
+  document.getElementById('dFormula').innerHTML=`i = ${s.designRainfall} mm × 0.42 = <strong>${s.designIntensity} mm/hr</strong> · 1-hr peak · ${T}-year return · Bengaluru Tc≈0.42`;
+  if(document.getElementById('eI'))document.getElementById('eI').textContent=s.designIntensity;
+  if(ST.analysisRun)doEngCalc();
+}
+
+// ============================================================
+// MAIN ANALYSIS RUNNER
+// ============================================================
+function runAnalysis(){
+  calcC();cvtArea();
+  ST.waterDemandLpd=+document.getElementById('demand').value;
+  const s=computeStorm(ST.returnPeriod);
+  ST.designRainfall=s.designRainfall;
+  ST.designIntensity=s.designIntensity;
+  ST.analysisRun=true;
+  document.getElementById('sb1').classList.add('done');
+  toast('✅ Intelligence generated successfully.');
+  goTab(2);
+}
+
+// Chart watermark plugin
+const watermarkPlugin = {
+  id: 'watermark',
+  beforeDraw: (chart) => {
+    if(!isSimulated) return;
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 36px "Helvetica Neue", Helvetica, Arial, sans-serif';
+    ctx.fillStyle = 'rgba(203, 214, 209, 0.4)'; // light text4
+    ctx.translate(chart.width / 2, chart.height / 2);
+    ctx.rotate(-Math.PI / 6);
+    ctx.fillText('SIMULATED DATA', 0, 0);
+    ctx.restore();
+  }
+};
+Chart.register(watermarkPlugin);
+
+// ============================================================
+// RENDER TAB 2
+// ============================================================
+function renderT2(){
+  const data=ST.annualData;
+  const ann=data.map(d=>d.total);
+  const avg=Math.round(ann.reduce((a,b)=>a+b,0)/ann.length);
+  const maxY=data.reduce((a,b)=>b.total>a.total?b:a);
+  const minY=data.reduce((a,b)=>b.total<a.total?b:a);
+  const maxD=ST.ams[0];
+
+  document.getElementById('mAvg').innerHTML=avg+' <span class="u">mm</span>';
+  document.getElementById('mHigh').innerHTML=maxY.total.toLocaleString()+' <span class="u">mm</span>';
+  document.getElementById('mHighLbl').textContent=maxY.year;
+  document.getElementById('mLow').innerHTML=minY.total.toLocaleString()+' <span class="u">mm</span>';
+  document.getElementById('mLowLbl').textContent=minY.year;
+  document.getElementById('mMaxDay').innerHTML=maxD.maxDay+' <span class="u">mm</span>';
+  document.getElementById('mMaxDayLbl').textContent='Sep '+maxD.year;
+
+  const s=computeStorm(ST.returnPeriod);
+  ST.designRainfall=s.designRainfall;ST.designIntensity=s.designIntensity;
+  document.getElementById('dRain').textContent=s.designRainfall;
+  document.getElementById('dInt').textContent=s.designIntensity;
+  document.getElementById('dFormula').innerHTML=`i = ${s.designRainfall} mm × 0.42 = <strong>${s.designIntensity} mm/hr</strong> · 1-hr peak · ${ST.returnPeriod}-year return period`;
+
+  // Monthly chart
+  dch('monthly');
+  CHS['monthly']=new Chart(document.getElementById('chMonthly'),{
+    type:'bar',
+    data:{labels:MONTHS,datasets:[{label:'Avg Rainfall (mm)',data:BASE_MONTHLY,backgroundColor:MONTHS.map((_,i)=>i>=5&&i<=9?cTheme.rain:'#c4a882'),borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'#ebf0ee'}},x:{grid:{display:false}}}}
+  });
+
+  // Annual chart
+  const ma5=ann.map((_,i,a)=>{const sl=a.slice(Math.max(0,i-2),i+3);return Math.round(sl.reduce((s,v)=>s+v,0)/sl.length);});
+  dch('annual');
+  CHS['annual']=new Chart(document.getElementById('chAnnual'),{
+    type:'bar',
+    data:{labels:YEARS25,datasets:[
+      {type:'bar',label:'Annual (mm)',data:ann,backgroundColor:cTheme.bg_rain,borderRadius:3},
+      {type:'line',label:'5-yr MA',data:ma5,borderColor:cTheme.rain,borderWidth:2,pointRadius:2,fill:false,tension:.4}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:11},boxWidth:12}}},scales:{y:{grid:{color:'#ebf0ee'}},x:{grid:{display:false},ticks:{maxRotation:45,font:{size:10}}}}}
+  });
+
+  // AMS Table
+  document.getElementById('amsTbody').innerHTML=ST.ams.slice(0,15).map(r=>{
+    const hl=r.rank<=3?'style="background:#fef3c7;"':'';
+    return `<tr ${hl}><td><strong>${r.rank}</strong></td><td>${r.year}</td><td><strong>${r.maxDay}</strong></td><td>${r.returnPeriod} yrs</td></tr>`;
+  }).join('');
+
+  // Soil chart (Uses manageable values, draws generic pie based on preset)
+  const sKey = document.getElementById('soilType').value;
+  const sData = SOILS[sKey];
+  const percVal = document.getElementById('inPerc').value;
+  const fcVal = document.getElementById('inFC').value;
+  
+  document.getElementById('soilLbl').textContent=sData.n + ' (Customized)';
+  document.getElementById('sPerc').textContent=percVal+' mm/hr';
+  document.getElementById('sFC').textContent=fcVal+'%';
+  
+  dch('soil');
+  CHS['soil']=new Chart(document.getElementById('chSoil'),{
+    type:'doughnut',
+    data:{labels:['Sand','Silt','Clay'],datasets:[{data:[sData.sand,sData.silt,sData.clay],backgroundColor:['#d4a017','#86efac','#c2410c'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:10}}}}
+  });
+
+  // Volume chart
+  const harvestMonthly=BASE_MONTHLY.map(m=>Math.round(m*ST.activeAreaSqm*(1-ST.compositeC)/1000));
+  const demandMonthly=Array(12).fill(Math.round(ST.waterDemandLpd*30.5/1000));
+  document.getElementById('annHarv').textContent=harvestMonthly.reduce((a,b)=>a+b,0).toLocaleString()+' KL';
+  dch('volume');
+  CHS['volume']=new Chart(document.getElementById('chVolume'),{
+    type:'bar',
+    data:{labels:MONTHS,datasets:[
+      {label:'Harvest (KL)',data:harvestMonthly,backgroundColor:cTheme.bg_harv,borderRadius:3},
+      {type:'line',label:'Demand (KL)',data:demandMonthly,borderColor:'#b91c1c',borderWidth:2,pointRadius:0,fill:false}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:11},boxWidth:10}}},scales:{y:{grid:{color:'#ebf0ee'}},x:{grid:{display:false}}}}
+  });
+
+  // ET chart
+  dch('et');
+  CHS['et']=new Chart(document.getElementById('chET'),{
+    type:'line',
+    data:{labels:MONTHS,datasets:[
+      {label:'ET₀ (mm)',data:ET_MONTHLY,borderColor:'#d97730',backgroundColor:'rgba(217,119,6,.12)',fill:true,tension:.4,pointRadius:3},
+      {label:'Rainfall (mm)',data:BASE_MONTHLY,borderColor:cTheme.rain,borderDash:[4,2],fill:false,tension:.4,pointRadius:0}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:11},boxWidth:10}}},scales:{y:{grid:{color:'#ebf0ee'}},x:{grid:{display:false}}}}
+  });
+
+  if(document.getElementById('eI'))document.getElementById('eI').textContent=s.designIntensity;
+  if(document.getElementById('eA'))document.getElementById('eA').textContent=(ST.activeAreaSqm/10000).toFixed(2);
+  document.getElementById('eC').textContent=ST.compositeC.toFixed(2);
+}
+
+// ============================================================
+// ENGINEERING CALCULATIONS
+// ============================================================
+function doEngCalc(){
+  const C=ST.compositeC;
+  const i=ST.designIntensity;
+  const A=ST.activeAreaSqm/10000; // ha, uses active catchment
+  
+  const percRate = +document.getElementById('inPerc').value || 18;
+  const ann=ST.annualData.map(d=>d.total);
+  const avgRain=ann.reduce((a,b)=>a+b,0)/ann.length;
+
+  // Rational method
+  const Q_m3s=(C*i*A)/360;
+  const Q_lhr=Math.round(C*i*ST.activeAreaSqm);
+
+  // Annual harvest
+  const harvestKL=Math.round(avgRain*ST.activeAreaSqm*(1-C)/1000);
+
+  // Pit: absorb 1-hr peak inflow minus percolation capacity, 30% safety factor
+  const stormInflow=i*ST.activeAreaSqm; // L/hr
+  const pitVol=Math.max(5,Math.round(stormInflow*C/1000*1.3));
+
+  // Tank: 45-day dry season buffer
+  const tankKL=Math.round(ST.waterDemandLpd*45/1000);
+
+  // French drain length
+  const drainLen=Math.max(10,Math.round((Q_lhr*0.25)/(percRate*500)*1000));
+
+  // Balance
+  const annDemandKL=Math.round(ST.waterDemandLpd*365/1000);
+  const selfSuff=Math.min(100,Math.round(harvestKL/annDemandKL*100));
+  const surplus=harvestKL-annDemandKL;
+  const score=Math.min(100,Math.round(50+(1-C)*30+(+document.getElementById('sNative').value/100)*20));
+
+  ST.calc={Q_m3s,Q_lhr,harvestKL,pitVol,tankKL,drainLen,annDemandKL,selfSuff,surplus,avgRain,score};
+
+  // Update tab3 metrics
+  document.getElementById('eQ').innerHTML=Q_lhr.toLocaleString()+'<span class="u">L/hr</span>';
+  document.getElementById('eHarv').innerHTML=harvestKL.toLocaleString()+'<span class="u">KL/yr</span>';
+  document.getElementById('ePit').innerHTML=pitVol+'<span class="u">m³</span>';
+  document.getElementById('eSelf').innerHTML=selfSuff+'<span class="u">%</span>';
+
+  document.getElementById('eC').textContent=C.toFixed(2);
+  document.getElementById('eI').textContent=i;
+  document.getElementById('eA').textContent=A.toFixed(2);
+  document.getElementById('qDisp').innerHTML=Q_m3s.toFixed(4)+' <small style="font-size:.85rem; font-weight:normal;">m³/s</small>';
+  document.getElementById('qCtx').innerHTML=(Q_m3s<0.01?'Low Volume · Standard drains adequate':Q_m3s<0.05?'Moderate · French drain recommended':'High Volume · Bioswale + robust drains essential');
+  document.getElementById('qPlain').textContent=Q_lhr.toLocaleString()+' litres';
+
+  const sKey = document.getElementById('soilType').value;
+  document.getElementById('pitSpec').textContent=`${pitVol} m³ total · ${Math.ceil(pitVol/5)} pits of ~5 m³ · Depth 2.5–3 m · ${SOILS[sKey].n} base`;
+  document.getElementById('tankSpec').textContent=`${tankKL.toLocaleString()} KL · 45-day dry buffer · Demand: ${(ST.waterDemandLpd/1000).toFixed(1)} KL/day`;
+  document.getElementById('drainSpec').textContent=`${drainLen} m French drain · 300mm perforated pipe · Gravel surround`;
+
+  // Balance chart
+  const mHarv=BASE_MONTHLY.map(m=>Math.round(m*ST.activeAreaSqm*(1-C)/1000));
+  const mDem=Array(12).fill(Math.round(ST.waterDemandLpd*30.5/1000));
+  dch('balance');
+  CHS['balance']=new Chart(document.getElementById('chBalance'),{
+    type:'bar',
+    data:{labels:MONTHS,datasets:[
+      {label:'Harvest (KL)',data:mHarv,backgroundColor:cTheme.bg_harv,borderRadius:4},
+      {label:'Demand (KL)',data:mDem,backgroundColor:'rgba(185,28,28,.6)',borderRadius:4}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:11},boxWidth:12}}},scales:{y:{grid:{color:'#ebf0ee'}},x:{grid:{display:false}}}}
+  });
+
+  document.getElementById('aSupply').textContent=harvestKL.toLocaleString()+' KL';
+  document.getElementById('aDemand').textContent=annDemandKL.toLocaleString()+' KL';
+  const balEl=document.getElementById('aBalance');
+  balEl.textContent=(surplus>=0?'+':'')+surplus.toLocaleString()+' KL';
+  balEl.style.color=surplus>=0?'var(--green)':'var(--red)';
+
+  // Projections
+  [[0,'p0r','p0h',null],[5,'p5r','p5h','p5x'],[10,'p10r','p10h','p10x'],[25,'p25r','p25h','p25x']].forEach(([yr,rId,hId,rxId])=>{
+    const f=1+(yr/10)*0.07;
+    document.getElementById(rId).textContent=Math.round(avgRain*f)+' mm';
+    document.getElementById(hId).textContent=Math.round(harvestKL*f).toLocaleString()+' KL';
+    if(rxId){
+      const risk=yr<=5?'<span class="vg">✓ Low</span>':yr<=10?'<span class="vw">⚠ Moderate</span>':'<span class="vb">⚡ High</span>';
+      document.getElementById(rxId).innerHTML=risk;
+    }
+  });
+
+  const pYrs=[0,5,10,15,20,25];
+  dch('proj');
+  CHS['proj']=new Chart(document.getElementById('chProj'),{
+    type:'line',
+    data:{labels:pYrs.map(y=>y===0?'Now':'+'+y+'yr'),datasets:[
+      {label:'Rainfall (mm)',data:pYrs.map(y=>Math.round(avgRain*(1+(y/10)*0.07))),borderColor:cTheme.rain,fill:false,tension:.4,pointRadius:3},
+      {label:'Harvest (KL)',data:pYrs.map(y=>Math.round(harvestKL*(1+(y/10)*0.07))),borderColor:cTheme.harvest,fill:false,tension:.4,pointRadius:3,borderDash:[4,2]}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:11},boxWidth:10}}},scales:{y:{grid:{color:'#ebf0ee'}},x:{grid:{display:false}}}}
+  });
+
+  // Irrigation chart
+  const effRain=BASE_MONTHLY.map(m=>Math.round(m*0.7));
+  const irrStd=ET_MONTHLY.map((e,idx)=>Math.max(0,e-effRain[idx]));
+  const npc=+document.getElementById('sNative').value;
+  const irrNat=irrStd.map(v=>Math.round(v*(1-npc/100*0.75)));
+  dch('irrig');
+  CHS['irrig']=new Chart(document.getElementById('chIrrig'),{
+    type:'bar',
+    data:{labels:MONTHS,datasets:[
+      {label:'Standard Turf (mm)',data:irrStd,backgroundColor:'rgba(220,38,38,.4)',borderRadius:3},
+      {label:'Native Planting (mm)',data:irrNat,backgroundColor:cTheme.bg_rain,borderRadius:3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:11},boxWidth:10}}},scales:{y:{grid:{color:'#ebf0ee'}},x:{grid:{display:false}}}}
+  });
+  document.getElementById('nativePctLbl').textContent=npc+'%';
+  const irSav=Math.min(75,20+npc*1.5);
+  document.getElementById('irrigSav').textContent='~'+(irSav-4).toFixed(0)+'–'+irSav.toFixed(0)+'%';
+
+  // Species grid
+  document.getElementById('speciesGrid').innerHTML=SPECIES.map(s=>
+    `<div class="spc-card"><div style="font-size:1.2rem;margin-bottom:.3rem;">${s.i}</div><div class="spc-name">${s.n}</div><div class="spc-sci">${s.s}</div><div class="spc-role">${s.r}</div><div class="spc-ben">${s.b}</div></div>`
+  ).join('');
+}
+
+function renderT3(){
+  doEngCalc();
+}
+
+// ============================================================
+// RENDER TAB 4
+// ============================================================
+function renderT4(){
+  if(!ST.calc.Q_m3s)doEngCalc();
+  const c=ST.calc;
+  const siteName=document.getElementById('siteName').value;
+  const lat=+document.getElementById('lat').value;
+  const lon=+document.getElementById('lon').value;
+  const ptLabel=document.getElementById('projType').options[document.getElementById('projType').selectedIndex].text;
+
+  document.getElementById('rptName').textContent=siteName;
+  document.getElementById('rptMeta').textContent=`${Math.abs(lat).toFixed(4)}°N, ${Math.abs(lon).toFixed(4)}°E · Catchment: ${(ST.activeAreaSqm/1000).toFixed(1)}K m² · ${ptLabel}`;
+  document.getElementById('rptScore').textContent=c.score+'/100';
+  document.getElementById('rptSelf').textContent=c.selfSuff+'%';
+  document.getElementById('r1').innerHTML=c.harvestKL.toLocaleString()+'<span class="u">KL</span>';
+  document.getElementById('r2').innerHTML=c.Q_m3s.toFixed(4)+'<span class="u">m³/s</span>';
+  document.getElementById('r3').innerHTML=c.pitVol+'<span class="u">m³</span>';
+  document.getElementById('r4').innerHTML=c.tankKL.toLocaleString()+'<span class="u">KL</span>';
+
+  // Recommendations
+  const recs=[];
+  if(ST.compositeC>0.5)recs.push({i:'🌳',t:'Increase Native Planting Coverage',d:`Your C-factor of ${ST.compositeC.toFixed(2)} indicates high runoff. Increasing native cover by 10% would reduce peak runoff by ~12–15% and add approximately ${Math.round(c.harvestKL*0.12)} KL to annual harvest.`,p:'High',pc:'pri-h'});
+  recs.push({i:'🕳',t:`Install Recharge Pits — ${c.pitVol} m³ Total`,d:`Based on your ${ST.returnPeriod}-year design storm (${ST.designRainfall} mm/day) and a percolation rate of ${document.getElementById('inPerc').value} mm/hr, you need ${c.pitVol} m³ of recharge capacity distributed across low points in the catchment.`,p:'Critical',pc:'pri-c'});
+  recs.push({i:'🏗',t:`${c.tankKL.toLocaleString()} KL Sealed Storage Tank`,d:`To cover your ${(ST.waterDemandLpd/1000).toFixed(1)} KL/day demand through the 45-day Mar–May dry window, a sealed sump or underground tank of ${c.tankKL.toLocaleString()} KL is required.`,p:'Critical',pc:'pri-c'});
+  if(c.drainLen>20)recs.push({i:'🌿',t:`${c.drainLen}m French Drain / Bioswale`,d:`Design storm overflow must be channelled safely off-site. A ${c.drainLen}m French drain with bioswale edges adds ecological value as a pollinator corridor while protecting against flood risk.`,p:'High',pc:'pri-h'});
+  if(c.surplus<0)recs.push({i:'⚠️',t:'Rainwater Alone Insufficient — Supplement Required',d:`Your annual harvest (${c.harvestKL.toLocaleString()} KL) covers ${c.selfSuff}% of annual demand (${c.annDemandKL.toLocaleString()} KL). Consider borewell recharge integration, greywater recycling, or demand-side reduction.`,p:'Medium',pc:'pri-m'});
+  recs.push({i:'🦋',t:'Plant Native Species — Vetiver + Pongam Priority',d:`Vetiver (root depth 3–4m) and Pongam are highest priority for this bioregion. Both dramatically boost soil percolation rates and require minimal irrigation post-establishment.`,p:'Recommended',pc:'pri-r'});
+
+  document.getElementById('rptRecs').innerHTML=recs.map(r=>
+    `<div class="rec"><div class="rec-ico ${r.p==='Critical'?'a':'g'}">${r.i}</div>
+     <div><div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.3rem;">
+       <div class="rec-title">${r.t}</div><span class="pri ${r.pc}">${r.p}</span></div>
+       <div class="rec-desc">${r.d}</div></div></div>`
+  ).join('');
+
+  // Specs table
+  document.getElementById('specsTbody').innerHTML=[
+    ['Total Project Site','— Input',`${ST.totalAreaSqm.toLocaleString()} m²`,`${(ST.totalAreaSqm/10000).toFixed(2)} Ha`],
+    ['Active Catchment (A)','— Input',`${ST.activeAreaSqm.toLocaleString()} m²`,`${(ST.activeAreaSqm/10000).toFixed(2)} Ha`],
+    ['Composite C','Σ(Cᵢ × %ᵢ) / 100',`C values: 0.90/0.35/0.15/0.05`,ST.compositeC.toFixed(2)],
+    ['Design Rainfall',`Gumbel EVT · T=${ST.returnPeriod}yr`,`AMS mean + K_T × σ`,`${ST.designRainfall} mm/day`],
+    ['Design Intensity','i = D_rain × Tc (0.42)',`${ST.designRainfall} × 0.42`,`${ST.designIntensity} mm/hr`],
+    ['Peak Runoff (Q)','Q = C·i·A ÷ 360',`${ST.compositeC.toFixed(2)} × ${ST.designIntensity} × ${(ST.activeAreaSqm/10000).toFixed(2)}`,`${c.Q_m3s.toFixed(4)} m³/s`],
+    ['Annual Harvest','V = A × R̄ × (1−C)',`${ST.activeAreaSqm.toLocaleString()} m² × ${Math.round(c.avgRain)} mm`,`${c.harvestKL.toLocaleString()} KL/yr`],
+    ['Recharge Pit','V_pit = Q·t·1.3/1000',`${c.Q_lhr.toLocaleString()} L/hr · SF=1.3`,`${c.pitVol} m³`],
+    ['Storage Tank','Demand × 45 days',`${(ST.waterDemandLpd/1000).toFixed(1)} KL/day × 45`,`${c.tankKL.toLocaleString()} KL`],
+    ['French Drain','L = Q_ov / perc_rate',`${c.Q_lhr.toLocaleString()} L/hr overflow`,`${c.drainLen} m`],
+  ].map(([p,f,inp,res])=>`<tr><td><strong>${p}</strong></td><td style="font-family:monospace;font-size:.8rem;">${f}</td><td style="color:var(--text3);">${inp}</td><td><strong style="color:var(--forest);">${res}</strong></td></tr>`).join('');
+
+  // ILI Alignment
+  const npc=+document.getElementById('sNative').value;
+  const iliData=[
+    {ico:'💧',t:'Water Ledger™',v:c.harvestKL.toLocaleString()+' KL',d:'Annual Harvest Potential recorded'},
+    {ico:'🌿',t:'Carbon Ledger™',v:Math.round(npc*ST.activeAreaSqm/10000*2.5)+' tCO₂eq',d:'Estimated sequestration potential'},
+    {ico:'🏆',t:'GDHI™ Score',v:c.score+' / 100',d:'Greenscape Designz Happiness Index'}
+  ];
+  document.getElementById('iliGrid').innerHTML=iliData.map(x=>
+    `<div class="ili-card"><div style="font-size:1.6rem;margin-bottom:.5rem;">${x.ico}</div>
+     <div style="font-weight:700;color:var(--forest);margin-bottom:.3rem;">${x.t}</div>
+     <div class="ili-val">${x.v}</div>
+     <div style="font-size:.8rem;color:var(--text3);margin-top:.4rem;line-height:1.4;">${x.d}</div></div>`
+  ).join('');
+}
+
+// ============================================================
+// LIVE DATA FETCH (Open-Meteo)
+// ============================================================
+async function fetchLive(){
+  const lat=+document.getElementById('lat').value;
+  const lon=+document.getElementById('lon').value;
+  showLoad('Connecting to Open-Meteo Archive API…');
+  try{
+    const url=`https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=1999-01-01&end_date=2024-12-31&daily=precipitation_sum&elevation=NaN&timezone=auto`;
+    updLoad('Downloading 25 years of daily rainfall data & elevation…');
+    const res=await fetch(url);
+    if(!res.ok)throw new Error('API fail');
+    const json=await res.json();
+    
+    // Set Elevation
+    if(json.elevation) {
+      document.getElementById('elev').value = Math.round(json.elevation);
+      document.getElementById('dElev').textContent = Math.round(json.elevation) + ' m';
+    }
+
+    const dates=json.daily.time, precip=json.daily.precipitation_sum;
+    updLoad('Processing annual maximum series…');
+    const byY={};
+    dates.forEach((d,i)=>{
+      const y=d.split('-')[0];
+      if(!byY[y])byY[y]={year:+y,months:Array(12).fill(0),total:0,maxDay:0};
+      const m=+d.split('-')[1]-1;
+      const p=precip[i]||0;
+      byY[y].months[m]+=p;byY[y].total+=p;
+      if(p>byY[y].maxDay)byY[y].maxDay=p;
+    });
+    ST.annualData=Object.values(byY).filter(d=>d.year>=1999&&d.year<=2024).map(d=>({...d,total:Math.round(d.total),maxDay:Math.round(d.maxDay)}));
+    computeAMS();
+    
+    ST.analysisRun=true;
+    isSimulated=false;
+    cTheme = C_LIVE; // Switch to vibrant brand colors
+    
+    const bdg='<span class="dot"></span>Live Open-Meteo · '+lat.toFixed(3)+'°N';
+    document.getElementById('globalBadge').className='badge badge-live';document.getElementById('globalBadge').innerHTML=bdg;
+    document.getElementById('t2Badge').className='badge badge-live';document.getElementById('t2Badge').innerHTML=bdg;
+    hideLoad();toast('✅ Live data loaded — '+ST.annualData.length+' years & elevation gathered.');
+    goTab(2);
+  }catch(e){
+    hideLoad();toast('⚠ Live fetch unavailable — falling back to sample data.');
+    useSim();
+  }
+}
+
+function useSim(){
+  genSimData();
+  ST.analysisRun=true;
+  isSimulated=true;
+  cTheme = C_SIM; // Switch to muted sim colors
+  
+  document.getElementById('globalBadge').className='badge badge-sim';document.getElementById('globalBadge').innerHTML='<span class="dot"></span>Sample / Simulated Data';
+  toast('📊 Local sample data loaded.');
+  goTab(2);
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function showLoad(m){document.getElementById('loading').classList.add('show');document.getElementById('lmsg').textContent=m;}
+function hideLoad(){document.getElementById('loading').classList.remove('show');}
+function updLoad(m){document.getElementById('lmsg').textContent=m;}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500);}
+function tgl(id){document.getElementById(id).classList.toggle('open');}
+</script>
+</body>
+</html>
