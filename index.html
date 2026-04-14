@@ -7,6 +7,11 @@
 <meta name="description" content="Coordinate-based rainwater harvesting intelligence for Karnataka. 25-year climate data, soil analysis, engineering sizing, and developer compliance.">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script>
+  // Required configuration for PDF.js worker
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+</script>
 <style>
 :root{
   --bg:#f0f4f2;--sf:#fff;--s2:#e8efeb;--s3:#dce8e1;
@@ -53,7 +58,7 @@ body{font-family:var(--ff);background:var(--bg);color:var(--T);min-height:100vh;
 .ct{font-size:1.02rem;font-weight:800;color:var(--F);margin-bottom:.2rem;letter-spacing:-.01em;}
 .cs{font-size:.78rem;color:var(--T3);margin-bottom:1.1rem;line-height:1.4;}
 .met{background:#fff;border:1.5px solid var(--bd);border-radius:var(--r);padding:1.1rem;position:relative;overflow:hidden;}
-.met::before{content:'';position:absolute;top:0;left:0;right:0;height:3.5px;}
+.met::before{content:'absolute';top:0;left:0;right:0;height:3.5px;}
 .met.g::before{background:var(--F);}.met.b::before{background:var(--W);}.met.a::before{background:var(--A);}.met.r::before{background:var(--R);}
 .ml{font-size:.69rem;text-transform:uppercase;letter-spacing:.07em;color:var(--T3);font-weight:700;margin-bottom:.25rem;}
 .mv{font-size:1.75rem;font-weight:800;color:var(--T);line-height:1;letter-spacing:-.02em;}
@@ -136,11 +141,6 @@ body{font-family:var(--ff);background:var(--bg);color:var(--T);min-height:100vh;
 .cx-val{font-size:1.25rem;font-weight:800;color:var(--T);line-height:1;}
 .cx-u{font-size:.7rem;color:var(--T3);font-weight:400;margin-left:.1rem;}
 .cx-src{font-size:.65rem;color:var(--T4);margin-top:.2rem;}
-/* ET COMPARISON */
-.et-cmp{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;}
-.etc{padding:.9rem;border-radius:var(--rs);border:1.5px solid var(--bd);}
-.etc.live{background:var(--FL);border-color:var(--bd2);}
-.etc.form{background:var(--AL);border-color:#fde68a;}
 /* WATER BODIES */
 .wb-item{display:flex;align-items:center;gap:.8rem;padding:.75rem .85rem;border:1.5px solid var(--bd);border-radius:var(--rs);background:#fff;margin-bottom:.6rem;}
 .wb-ico{width:36px;height:36px;background:var(--WL);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
@@ -192,7 +192,7 @@ body{font-family:var(--ff);background:var(--bg);color:var(--T);min-height:100vh;
 .avw{width:100%;background:var(--s3);border-radius:4px;height:12px;overflow:hidden;border:1px solid var(--bd);margin-top:.4rem;}
 .avf{height:100%;background:var(--W);transition:width .35s;}
 .api-src{font-size:.68rem;color:var(--T4);padding:.18rem .5rem;background:var(--s2);border-radius:4px;display:inline-block;margin-top:.25rem;}
-.loading{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:.9rem;color:#fff;}
+.loading{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:.9rem;color:#fff;}
 .loading.on{display:flex;}
 .spin{width:40px;height:40px;border:4px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:sp .75s linear infinite;}
 @keyframes sp{to{transform:rotate(360deg);}}
@@ -203,7 +203,7 @@ body{font-family:var(--ff);background:var(--bg);color:var(--T);min-height:100vh;
 /* PRE-PRINT MODAL */
 .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:1000; align-items:center; justify-content:center; padding:1rem; }
 .modal-overlay.on { display:flex; }
-.modal-box { background:#fff; border-radius:var(--r); padding:2rem; width:100%; max-width:400px; box-shadow:var(--shl); }
+.modal-box { background:#fff; border-radius:var(--r); padding:2rem; width:100%; max-width:440px; box-shadow:var(--shl); }
 .modal-title { font-size:1.2rem; font-weight:800; color:var(--F); margin-bottom:.5rem; }
 .modal-desc { font-size:.85rem; color:var(--T2); margin-bottom:1.5rem; line-height:1.5; }
 
@@ -246,7 +246,7 @@ body{font-family:var(--ff);background:var(--bg);color:var(--T);min-height:100vh;
 
 <div class="loading" id="ldOverlay">
   <div class="spin"></div>
-  <div style="font-size:.95rem;font-weight:700;" id="ldTitle">Fetching live data…</div>
+  <div style="font-size:.95rem;font-weight:700;" id="ldTitle">Processing…</div>
   <div class="ldsteps" id="ldSteps"></div>
 </div>
 <div class="toast" id="toast"></div>
@@ -255,7 +255,7 @@ body{font-family:var(--ff);background:var(--bg);color:var(--T);min-height:100vh;
   <div class="hdr-brand">
     <div class="hdr-ico">🌧</div>
     <div><h1>Baarish™ — Rain Intelligence</h1>
-    <p>ILI™ · GDHI™ · Greenscape Designz · v4.0 — All data fetched live, no backend</p></div>
+    <p>ILI™ · GDHI™ · Greenscape Designz · v4.1 — All data fetched live, no backend</p></div>
   </div>
   <div class="hdr-r">
     <span class="badge b-wait" id="gBadge"><span class="bdot"></span>Awaiting Fetch</span>
@@ -396,7 +396,7 @@ body{font-family:var(--ff);background:var(--bg);color:var(--T);min-height:100vh;
       <div class="card">
         <div class="ct">🪨 Soil Profile</div>
         <div class="cs">Preset auto-populates fields. "Fetch All" above replaces these with live SoilGrids ISRIC data for these exact coordinates.</div>
-        <div id="soilLiveTag" style="display:none;background:#dcfce7;border:1.5px solid #86efac;border-radius:6px;padding:.6rem .85rem;font-size:.8rem;color:#14532d;margin-bottom:.9rem;display:none;align-items:center;gap:.5rem;">✅ SoilGrids ISRIC · Live data loaded for these coordinates</div>
+        <div id="soilLiveTag" style="display:none;background:#dcfce7;border:1.5px solid #86efac;border-radius:6px;padding:.6rem .85rem;font-size:.8rem;color:#14532d;margin-bottom:.9rem;align-items:center;gap:.5rem;">✅ SoilGrids ISRIC · Live data loaded for these coordinates</div>
         <div class="fg"><label class="fl">Soil Preset</label>
           <select class="fs" id="soilType" onchange="updSoilPreset()">
             <option value="red_laterite" selected>Red Laterite (Bengaluru Plateau)</option>
@@ -431,6 +431,23 @@ body{font-family:var(--ff);background:var(--bg);color:var(--T);min-height:100vh;
   <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.9rem;margin-bottom:1.3rem;">
     <div class="sh" style="margin-bottom:0;"><div class="st">🌧 Rainfall Intelligence + Weather Stations</div><div class="sd">25-year archive · Annual Maximum Series · Live station comparison · ET₀</div></div>
     <span class="badge b-wait" id="t2Badge"><span class="bdot"></span>Awaiting Data</span>
+  </div>
+
+  <div class="card" style="margin-bottom:1.4rem;">
+    <div class="ct">📸 Live Telemetry & Synoptic Feed (OCR)</div>
+    <div class="cs">Upload a screenshot (Image) or PDF of the KSNDMC/IMD feed to attach visual proof to your project report. Tesseract.js OCR will automatically scan the document for numerical data.</div>
+    
+    <div class="fg" style="margin-bottom:0;">
+      <input type="file" id="telemetryUpload" accept="image/*, application/pdf" class="fi" style="padding:0.4rem; cursor:pointer;" onchange="handleTelemetryUpload(event)">
+    </div>
+    
+    <div id="telemetryPreviewBox" style="display:none; margin-top:1rem; border:1.5px dashed var(--bd); border-radius:var(--rs); padding:0.5rem; text-align:center; background:var(--s2);">
+      <img id="telemetryImg" src="" alt="Telemetry Upload" style="display:none; max-width:100%; max-height:500px; border-radius:4px; box-shadow:var(--sh); margin: 0 auto;">
+      <canvas id="telemetryCanvas" style="display:none; max-width:100%; border-radius:4px; box-shadow:var(--sh); margin: 0 auto;"></canvas>
+      <div style="margin-top:0.8rem;">
+        <button class="btn btn-s" onclick="clearTelemetry()">🗑 Remove Document</button>
+      </div>
+    </div>
   </div>
 
   <div class="card" style="margin-bottom:1.4rem;" id="condFull">
@@ -487,22 +504,6 @@ body{font-family:var(--ff);background:var(--bg);color:var(--T);min-height:100vh;
         </table>
       </div>
       <div class="chw" style="margin-top:1rem;"><canvas id="chCmp"></canvas></div>
-    </div>
-  </div>
-
-  <div class="card" style="margin-bottom:1.4rem;">
-    <div class="ct">📸 Live Telemetry & Synoptic Feed</div>
-    <div class="cs">Upload a screenshot of the live KSNDMC or IMD feed to attach visual proof to your project report. OCR will attempt to read the numbers.</div>
-    
-    <div class="fg" style="margin-bottom:0;">
-      <input type="file" id="telemetryUpload" accept="image/*" class="fi" style="padding:0.4rem; cursor:pointer;" onchange="handleTelemetryUpload(event)">
-    </div>
-    
-    <div id="telemetryPreviewBox" style="display:none; margin-top:1rem; border:1.5px dashed var(--bd); border-radius:var(--rs); padding:0.5rem; text-align:center; background:var(--s2);">
-      <img id="telemetryImg" src="" alt="KSNDMC/IMD Telemetry" style="max-width:100%; max-height:500px; border-radius:4px; box-shadow:var(--sh);">
-      <div style="margin-top:0.8rem;">
-        <button class="btn btn-s" onclick="clearTelemetry()">🗑 Remove Image</button>
-      </div>
     </div>
   </div>
 
@@ -581,7 +582,7 @@ body{font-family:var(--ff);background:var(--bg);color:var(--T);min-height:100vh;
 
   <div class="g2" style="margin-bottom:1.4rem;">
     <div class="card">
-      <div class="ct">🏞 Nearby Water Bodies <span class="api-src">Overpass API · OpenStreetMap</span></div>
+      <div class="ct">🏞 Nearby Water Bodies <span class="api-src">Overpass API</span></div>
       <div class="cs">Water bodies within 5km of your coordinates — manual fetch required</div>
       <div id="wbList">
         <div style="padding:1rem;background:var(--s2);border-radius:6px;text-align:center;">
@@ -590,7 +591,7 @@ body{font-family:var(--ff);background:var(--bg);color:var(--T);min-height:100vh;
       </div>
     </div>
     <div class="card">
-      <div class="ct">🦋 Native Species — Live GBIF Data <span class="api-src">GBIF Occurrence API</span></div>
+      <div class="ct">🦋 Native Species — Live GBIF Data <span class="api-src">GBIF Occurrence</span></div>
       <div class="cs">Species with verified occurrence records within 50km — manual fetch required</div>
       <div id="gbifGrid" style="display:grid;grid-template-columns:1fr;gap:.65rem;">
         <div style="padding:1rem;background:var(--s2);border-radius:6px;text-align:center;">
@@ -832,7 +833,6 @@ body{font-family:var(--ff);background:var(--bg);color:var(--T);min-height:100vh;
 // ════════════════════════════════════════════════════════════
 const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const YRS=Array.from({length:25},(_,i)=>1999+i);
-// Hargreaves ET0 fallback for Bengaluru (mm/month)
 const ET0_FALLBACK=[95,100,135,145,130,85,65,60,70,90,105,100];
 
 const STATIONS=[
@@ -857,7 +857,6 @@ const SOIL_P={
   clay:{n:'Heavy Clay',sand:10,silt:25,clay:65,perc:2,fc:50,ph:7.2,oc:1.1},
   rocky:{n:'Rocky/Shallow',sand:70,silt:15,clay:15,perc:45,fc:15,ph:5.8,oc:0.4}
 };
-// Native species for planting palette (static — supplemented by GBIF live data)
 const SPECIES_BASE=[
   {n:'Honge / Pongam',s:'Pongamia pinnata',r:'Canopy Tree',b:'Deep taproot breaks hardpan; N-fixing; zero irrigation post-establishment',i:'🌳'},
   {n:'Neem',s:'Azadirachta indica',r:'Canopy Tree',b:'30m taproot; reduces runoff 40%; drought tolerant',i:'🌿'},
@@ -871,7 +870,7 @@ const SPECIES_BASE=[
 const RP_HINTS={2:'Sufficient for recharge pits.',5:'Recommended for RWH storage tanks.',10:'Standard for bioswales and drainage.',25:'Flood protection infrastructure.',50:'Critical near water bodies.'};
 
 // ════════════════════════════════════════════════════════════
-// STATE
+// STATE & UTILS
 // ════════════════════════════════════════════════════════════
 let ST={
   coordData:[],stnData:[],nasaPower:null,currentWx:null,
@@ -888,9 +887,6 @@ function dch(id){if(CHS[id]){CHS[id].destroy();delete CHS[id];}}
 Chart.defaults.font.family='"Helvetica Neue",Helvetica,Arial,sans-serif';
 Chart.defaults.color='#688070';
 
-// ════════════════════════════════════════════════════════════
-// UTILS
-// ════════════════════════════════════════════════════════════
 function hvs(la1,lo1,la2,lo2){
   const R=6371,d=Math.PI/180;
   const a=Math.sin((la2-la1)*d/2)**2+Math.cos(la1*d)*Math.cos(la2*d)*Math.sin((lo2-lo1)*d/2)**2;
@@ -903,18 +899,12 @@ function updLd(s){document.getElementById('ldSteps').innerHTML=s;}
 function hideLd(){document.getElementById('ldOverlay').classList.remove('on');}
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),4000);}
 
-// ════════════════════════════════════════════════════════════
-// INIT
-// ════════════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded',()=>{
   ['lat','lon','elev'].forEach(id=>document.getElementById(id).addEventListener('input',updCoord));
   ['siteArea','totalArea'].forEach(id=>document.getElementById(id).addEventListener('input',cvtArea));
   updCoord();calcC();cvtArea();
 });
 
-// ════════════════════════════════════════════════════════════
-// FORM HELPERS
-// ════════════════════════════════════════════════════════════
 function updCoord(){
   const lat=+document.getElementById('lat').value,lon=+document.getElementById('lon').value,elev=+document.getElementById('elev').value;
   document.getElementById('dLat').textContent=Math.abs(lat).toFixed(4)+'°N';
@@ -972,9 +962,6 @@ function setRP(T,btn){
   }
 }
 
-// ════════════════════════════════════════════════════════════
-// GUMBEL EVT
-// ════════════════════════════════════════════════════════════
 function computeAMS(data){
   return data.map(d=>({year:d.year,maxDay:d.maxDay})).sort((a,b)=>b.maxDay-a.maxDay)
     .map((d,i,a)=>({...d,rank:i+1,T:((a.length+1)/(i+1)).toFixed(1)}));
@@ -989,7 +976,7 @@ function gumbel(T){
 }
 
 // ════════════════════════════════════════════════════════════
-// API: OPEN-METEO ARCHIVE (25-year daily rainfall)
+// APIs
 // ════════════════════════════════════════════════════════════
 async function fetchOMArchive(lat,lon,label){
   updLd(`① Open-Meteo Archive: Downloading 25-year daily rainfall for ${label}…`);
@@ -1004,56 +991,38 @@ async function fetchOMArchive(lat,lon,label){
     byY[y].months[m]+=p;byY[y].total+=p;if(p>byY[y].maxDay)byY[y].maxDay=p;
   });
   if(j.elevation)document.getElementById('elev').value=Math.round(j.elevation);
-  return Object.values(byY).filter(d=>d.year>=1999&&d.year<=2024)
-    .map(d=>({...d,total:Math.round(d.total),maxDay:Math.round(d.maxDay)}));
+  return Object.values(byY).filter(d=>d.year>=1999&&d.year<=2024).map(d=>({...d,total:Math.round(d.total),maxDay:Math.round(d.maxDay)}));
 }
 
-// ════════════════════════════════════════════════════════════
-// API: OPEN-METEO CURRENT WEATHER
-// ════════════════════════════════════════════════════════════
 async function fetchOMCurrent(lat,lon){
   updLd('② Open-Meteo Current: Fetching live site conditions…');
   const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,cloud_cover&timezone=auto`;
   const res=await fetch(url);if(!res.ok)throw new Error('OM Current fail');
   const j=await res.json();
-  return{temp:j.current.temperature_2m,hum:j.current.relative_humidity_2m,
-    rain:j.current.precipitation,wind:j.current.wind_speed_10m,cloud:j.current.cloud_cover};
+  return{temp:j.current.temperature_2m,hum:j.current.relative_humidity_2m,rain:j.current.precipitation,wind:j.current.wind_speed_10m,cloud:j.current.cloud_cover};
 }
 
-// ════════════════════════════════════════════════════════════
-// API: NASA POWER (ET₀, solar radiation, temperature — 25yr monthly)
-// ════════════════════════════════════════════════════════════
 async function fetchNASAPower(lat,lon){
   updLd('③ NASA POWER: Fetching ET₀, solar radiation & temperature data…');
-  const today=new Date();
-  const end=`${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
   const url=`https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=ALLSKY_SFC_SW_DWN,T2M_MAX,T2M_MIN,T2M,RH2M,EVPTRNS&community=AG&longitude=${lon}&latitude=${lat}&start=2000&end=2024&format=JSON`;
   const res=await fetch(url);if(!res.ok)throw new Error('NASA POWER fail');
   const j=await res.json();
   const params=j.properties.parameter;
-  // Build monthly averages across years
   const et0=Array(12).fill(0),solar=Array(12).fill(0),cnt=Array(12).fill(0);
   Object.keys(params.EVPTRNS||{}).forEach(k=>{
-    if(k==='ANN')return;
-    const m=+k.slice(4)-1;const v=params.EVPTRNS[k];if(v>-990){et0[m]+=v;cnt[m]++;}
+    if(k==='ANN')return; const m=+k.slice(4)-1;const v=params.EVPTRNS[k];if(v>-990){et0[m]+=v;cnt[m]++;}
   });
   Object.keys(params.ALLSKY_SFC_SW_DWN||{}).forEach(k=>{
-    if(k==='ANN')return;
-    const m=+k.slice(4)-1;const v=params.ALLSKY_SFC_SW_DWN[k];if(v>-990)solar[m]+=v;
+    if(k==='ANN')return; const m=+k.slice(4)-1;const v=params.ALLSKY_SFC_SW_DWN[k];if(v>-990)solar[m]+=v;
   });
-  // Today's solar (latest available)
   const today_solar=params.ALLSKY_SFC_SW_DWN?Object.values(params.ALLSKY_SFC_SW_DWN).filter(v=>v>-990).slice(-1)[0]:null;
   const monthlyET0=et0.map((v,i)=>cnt[i]>0?Math.round(v/cnt[i]*10)/10:ET0_FALLBACK[i]);
   const avgSolar=today_solar||5.2;
-  // Current ET0 using Penman approximation with solar
   const tCurr=ST.currentWx?ST.currentWx.temp:32;
   const et0Today=Math.round(((0.0135*(23.9+tCurr)*avgSolar*0.0864))*10)/10;
   return{monthlyET0,et0Today,avgSolar,annualET0:Math.round(monthlyET0.reduce((a,b)=>a+b,0))};
 }
 
-// ════════════════════════════════════════════════════════════
-// API: SOILGRIDS ISRIC
-// ════════════════════════════════════════════════════════════
 async function fetchSoilGrids(lat,lon){
   updLd('④ SoilGrids ISRIC: Fetching live soil composition data…');
   const url=`https://rest.soilgrids.org/query?lon=${lon}&lat=${lat}&properties=clay,sand,silt,phh2o,ocd,bdod&depths=0-5cm&values=mean`;
@@ -1062,18 +1031,51 @@ async function fetchSoilGrids(lat,lon){
   const j=await res.json();
   const layers=j.properties.layers;
   const gv=name=>{const l=layers.find(x=>x.name===name);return l?l.depths[0].values.mean:null;};
-  const clay=Math.round((gv('clay')||280)/10);
-  const sand=Math.round((gv('sand')||450)/10);
+  const clay=Math.round((gv('clay')||280)/10), sand=Math.round((gv('sand')||450)/10);
   const silt=100-clay-sand>0?100-clay-sand:Math.round((gv('silt')||270)/10);
   const ph=Math.round((gv('phh2o')||62)/10*10)/10;
-  const oc=Math.round(((gv('ocd')||120)/100)*100)/100;
   let perc=18;
   if(clay>45)perc=3;else if(clay>35)perc=7;else if(clay>25)perc=14;else if(clay>15)perc=22;else perc=32;
-  return{clay,sand,silt,ph,oc,perc,fc:Math.round(clay*1.2+15)};
+  return{clay,sand,silt,ph,perc,fc:Math.round(clay*1.2+15)};
+}
+
+async function fetchWaterBodies(lat,lon){
+  updLd('⑤ Overpass API: Locating nearby water bodies within 5km…');
+  const q=`[out:json][timeout:25];(way["natural"="water"](around:5000,${lat},${lon});relation["natural"="water"](around:5000,${lat},${lon});node["natural"="water"](around:5000,${lat},${lon});way["water"="lake"](around:5000,${lat},${lon});way["water"="reservoir"](around:5000,${lat},${lon}););out center 10;`;
+  const res=await fetch('https://overpass-api.de/api/interpreter',{
+    method:'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body:'data='+encodeURIComponent(q)
+  });
+  if(!res.ok) throw new Error(`Overpass API failed`);
+  const j=await res.json();
+  return j.elements.map(e=>({
+    id:e.id, name:e.tags?.name||e.tags?.['name:en']||'Unnamed Water Body', type:e.tags?.water||e.tags?.natural||'water',
+    lat:e.center?.lat||e.lat||lat, lon:e.center?.lon||e.lon||lon,
+    dist:hvs(lat,lon,e.center?.lat||e.lat||lat,e.center?.lon||e.lon||lon)
+  })).filter(e=>e.dist<5).sort((a,b)=>a.dist-b.dist).slice(0,8);
+}
+
+async function fetchGBIF(lat,lon){
+  updLd('⑥ GBIF: Querying native species occurrence records…');
+  const cleanLat = parseFloat(lat), cleanLon = parseFloat(lon);
+  const queries=[
+    {sn:'Pongamia pinnata',key:2952883},{sn:'Azadirachta indica',key:5407105},{sn:'Chrysopogon zizanioides',key:2703613},
+    {sn:'Phyllanthus emblica',key:5329059},{sn:'Erythrina variegata',key:2945456},{sn:'Cynodon dactylon',key:2703630},
+    {sn:'Ficus benghalensis',key:3190246},{sn:'Curcuma aromatica',key:2757767}
+  ];
+  const results=await Promise.allSettled(queries.map(async q=>{
+    const url=`https://api.gbif.org/v1/occurrence/search?taxonKey=${q.key}&decimalLatitude=${cleanLat-0.5},${cleanLat+0.5}&decimalLongitude=${cleanLon-0.5},${cleanLon+0.5}&limit=1`;
+    const res=await fetch(url);
+    if(!res.ok) throw new Error('GBIF Error');
+    const j=await res.json();
+    return{...q,count:j.count||0};
+  }));
+  return results.filter(r=>r.status==='fulfilled').map(r=>r.value).sort((a,b)=>b.count-a.count);
 }
 
 // ════════════════════════════════════════════════════════════
-// MAIN FETCH ALL — Parallel requests
+// MAIN FETCH
 // ════════════════════════════════════════════════════════════
 async function fetchAll(){
   const lat=+document.getElementById('lat').value,lon=+document.getElementById('lon').value;
@@ -1097,7 +1099,6 @@ async function fetchAll(){
 
     ST.nasaPower=nasa;
     
-    // SAFEGUARD: Inject fallback data if Open-Meteo failed
     if(!ST.coordData || !ST.coordData.length){
       errs.push('Open-Meteo Archive (using fallback)');
       const seeds=[1.0,.82,1.12,.67,1.05,.78,1.28,.91,1.03,.88,1.15,.72,1.09,.84,1.22,.76,.99,1.18,.83,1.07,.71,1.25,.94,1.01,.87];
@@ -1105,8 +1106,7 @@ async function fetchAll(){
       ST.coordData=YRS.map((y,i)=>{
         const f=seeds[i]*(0.9+Math.random()*.2);
         const months=base.map(m=>Math.max(0,m*f*(.75+Math.random()*.5)));
-        const total=Math.round(months.reduce((a,b)=>a+b,0));
-        return{year:y,months,total,maxDay:Math.round(months[8]*.38+Math.random()*months[8]*.22)};
+        return{year:y,months,total:Math.round(months.reduce((a,b)=>a+b,0)),maxDay:Math.round(months[8]*.38+Math.random()*months[8]*.22)};
       });
     }
 
@@ -1116,8 +1116,7 @@ async function fetchAll(){
       document.getElementById('inSand').value=soil.sand;document.getElementById('inSilt').value=soil.silt;
       document.getElementById('inClay').value=soil.clay;document.getElementById('inPerc').value=soil.perc;
       document.getElementById('inFC').value=soil.fc;document.getElementById('inPH').value=soil.ph;
-      const tag=document.getElementById('soilLiveTag');
-      tag.style.display='flex';tag.style.marginBottom='.9rem';
+      document.getElementById('soilLiveTag').style.display='flex';
     }
 
     if(ST.coordData.length){
@@ -1136,10 +1135,9 @@ async function fetchAll(){
       });
     }
     if(nasa){
-      const et0t=nasa.et0Today;
       const e1=document.getElementById('cxET'),e2=document.getElementById('cxET2');
-      if(e1)e1.innerHTML=et0t+'<span class="cx-u">mm</span>';
-      if(e2)e2.innerHTML=et0t+'<span class="cx-u">mm</span>';
+      if(e1)e1.innerHTML=nasa.et0Today+'<span class="cx-u">mm</span>';
+      if(e2)e2.innerHTML=nasa.et0Today+'<span class="cx-u">mm</span>';
       if(document.getElementById('cxSolar'))document.getElementById('cxSolar').innerHTML=Math.round(nasa.avgSolar*1000/86.4)+'<span class="cx-u">W/m²</span>';
     }
     document.getElementById('condStrip').style.display='block';
@@ -1152,43 +1150,219 @@ async function fetchAll(){
     if(errs.length)toast(`⚠ ${errs.join(', ')} — fallback values used.`);
     else toast('✅ Live data loaded successfully.');
     ST.done=true;ST.demandLpd=+document.getElementById('demand').value;
-    const ann=ST.coordData.map(d=>d.total);
-    ST.avgRain=ann.reduce((a,b)=>a+b,0)/ann.length;
+    ST.avgRain=ST.coordData.map(d=>d.total).reduce((a,b)=>a+b,0)/ST.coordData.length;
     document.getElementById('sb1').classList.add('done');
     goTab(2);
-  }catch(e){hideLd();toast('⚠ Data fetch error — check console.');console.error(e);}
+  }catch(e){hideLd();toast('⚠ Data fetch error.');console.error(e);}
 }
 
-// ════════════════════════════════════════════════════════════
-// RUN WITHOUT LIVE DATA
-// ════════════════════════════════════════════════════════════
 function runAnalysis(){
-  calcC();cvtArea();
-  ST.demandLpd=+document.getElementById('demand').value;
+  calcC();cvtArea(); ST.demandLpd=+document.getElementById('demand').value;
   if(!ST.coordData.length){
-    toast('⚠ Using approximate data. Press "Fetch All Live Data" for site-specific accuracy.');
+    toast('⚠ Using approximate data.');
     const seeds=[1.0,.82,1.12,.67,1.05,.78,1.28,.91,1.03,.88,1.15,.72,1.09,.84,1.22,.76,.99,1.18,.83,1.07,.71,1.25,.94,1.01,.87];
     const base=[2,8,14,42,116,88,119,139,210,178,61,16];
     ST.coordData=YRS.map((y,i)=>{
       const f=seeds[i]*(0.9+Math.random()*.2);
       const months=base.map(m=>Math.max(0,m*f*(.75+Math.random()*.5)));
-      const total=Math.round(months.reduce((a,b)=>a+b,0));
-      return{year:y,months,total,maxDay:Math.round(months[8]*.38+Math.random()*months[8]*.22)};
+      return{year:y,months,total:Math.round(months.reduce((a,b)=>a+b,0)),maxDay:Math.round(months[8]*.38+Math.random()*months[8]*.22)};
     });
-    document.getElementById('gBadge').className='badge b-sim';
-    document.getElementById('gBadge').innerHTML='<span class="bdot"></span>Approximate · Fetch live data for accuracy';
-    document.getElementById('t2Badge').className='badge b-sim';
-    document.getElementById('t2Badge').innerHTML='<span class="bdot"></span>Approximate Karnataka data';
+    document.getElementById('gBadge').className='badge b-sim'; document.getElementById('gBadge').innerHTML='<span class="bdot"></span>Approximate';
+    document.getElementById('t2Badge').className='badge b-sim'; document.getElementById('t2Badge').innerHTML='<span class="bdot"></span>Approximate';
   }
   ST.ams=computeAMS(ST.coordData);
   const storm=gumbel(ST.returnPeriod);ST.designRainfall=storm.dr;ST.designIntensity=storm.di;
-  const ann=ST.coordData.map(d=>d.total);ST.avgRain=ann.reduce((a,b)=>a+b,0)/ann.length;
+  ST.avgRain=ST.coordData.map(d=>d.total).reduce((a,b)=>a+b,0)/ST.coordData.length;
   ST.done=true;document.getElementById('sb1').classList.add('done');
   goTab(2);
 }
 
 // ════════════════════════════════════════════════════════════
-// TAB NAVIGATION
+// MANUAL TRIGGERS FOR EXTERNAL APIs
+// ════════════════════════════════════════════════════════════
+async function triggerWB(){
+  const lat=parseFloat(document.getElementById('lat').value), lon=parseFloat(document.getElementById('lon').value);
+  showLd('Locating nearby water bodies via Overpass OSM...');
+  try {
+    ST.wbList = await fetchWaterBodies(lat, lon);
+    if(!ST.wbList.length){
+      document.getElementById('wbList').innerHTML='<div style="padding:.8rem;background:var(--s2);border-radius:6px;font-size:.82rem;color:var(--T3);">No water bodies found within 5km.</div>';
+    } else {
+      document.getElementById('wbList').innerHTML=ST.wbList.map(wb=>`
+        <div class="wb-item"><div class="wb-ico">🏞</div>
+          <div><div class="wb-nm">${wb.name}</div><div class="wb-mt">${wb.type} · ${wb.dist.toFixed(2)} km from site</div></div>
+        </div>`).join('');
+    }
+    toast('✅ Water bodies loaded.');
+  } catch(e) { console.error(e); toast('⚠ Error fetching water bodies.'); }
+  hideLd();
+}
+
+async function triggerGBIF(){
+  const lat=parseFloat(document.getElementById('lat').value), lon=parseFloat(document.getElementById('lon').value);
+  showLd('Querying GBIF occurrence records...');
+  try {
+    ST.gbifSpecies = await fetchGBIF(lat, lon);
+    const combined=SPECIES_BASE.map(base=>({...base,count:(ST.gbifSpecies.find(g=>g.sn===base.s))?.count||0}));
+    const grid = document.getElementById('gbifGrid');
+    grid.style.gridTemplateColumns = '1fr 1fr';
+    grid.innerHTML=combined.map(s=>`<div class="gbif-card"><div style="font-size:1rem;margin-bottom:.2rem;">${s.i}</div>
+        <div class="gbif-n">${s.n}</div><div class="gbif-s">${s.s}</div><div class="gbif-r">${s.r}</div>
+        <div class="gbif-cnt">${s.count>0?fmt(s.count)+' GBIF records near site':'Locally native'}</div>
+        <div style="font-size:.7rem;color:var(--T2);margin-top:.15rem;">${s.b}</div></div>`).join('');
+    toast('✅ Species data loaded.');
+  } catch(e) { console.error(e); toast('⚠ Error fetching species data.'); }
+  hideLd();
+}
+
+// ════════════════════════════════════════════════════════════
+// TELEMETRY UPLOAD & OCR (PDF.JS + TESSERACT.JS)
+// ════════════════════════════════════════════════════════════
+function handleTelemetryUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const previewBox = document.getElementById('telemetryPreviewBox');
+  const imgElement = document.getElementById('telemetryImg');
+  const canvasElement = document.getElementById('telemetryCanvas');
+  
+  imgElement.style.display = 'none';
+  canvasElement.style.display = 'none';
+  previewBox.style.display = 'block';
+
+  showLd('Loading Document...');
+
+  // Use setTimeout to allow the browser to paint the loading screen before freezing
+  setTimeout(async () => {
+    try {
+      if (file.type === 'application/pdf') {
+        updLd('Rendering PDF page...');
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+        const page = await pdf.getPage(1); // Only scan first page
+        const viewport = page.getViewport({scale: 1.5}); // Scale up for better OCR
+        
+        canvasElement.width = viewport.width;
+        canvasElement.height = viewport.height;
+        const ctx = canvasElement.getContext('2d');
+        
+        await page.render({canvasContext: ctx, viewport: viewport}).promise;
+        canvasElement.style.display = 'block';
+        
+        updLd('Running Tesseract OCR on PDF...');
+        await runOCR(canvasElement);
+
+      } else if (file.type.startsWith('image/')) {
+        updLd('Loading Image...');
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+          imgElement.src = e.target.result;
+          imgElement.style.display = 'block';
+          
+          // Slight delay to ensure image paints
+          setTimeout(async () => {
+             updLd('Running Tesseract OCR on Image...');
+             await runOCR(imgElement);
+          }, 100);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        throw new Error("Unsupported file format");
+      }
+    } catch (error) {
+      console.error("Document Error:", error);
+      toast('⚠ Document processing failed.');
+      hideLd();
+    }
+  }, 100);
+}
+
+async function runOCR(imageSource) {
+  try {
+    const worker = await Tesseract.createWorker('eng');
+    const ret = await worker.recognize(imageSource);
+    const rawText = ret.data.text;
+    await worker.terminate();
+    
+    console.log("Raw OCR Output:\n", rawText);
+    toast('✅ OCR Complete. Check browser console for raw text.');
+    parseTelemetryData(rawText);
+  } catch (e) {
+    console.error("OCR Error:", e);
+    toast('⚠ OCR Failed.');
+  } finally {
+    hideLd();
+  }
+}
+
+function parseTelemetryData(text) {
+  const rainMatch = text.match(/Rainfall[\s:]*([\d.]+)/i);
+  const tempMatch = text.match(/Temp(?:erature)?[\s:]*([\d.]+)/i);
+  if(rainMatch && rainMatch[1]) console.log("Extracted Rainfall:", parseFloat(rainMatch[1]));
+  if(tempMatch && tempMatch[1]) console.log("Extracted Temperature:", parseFloat(tempMatch[1]));
+}
+
+function clearTelemetry() {
+  document.getElementById('telemetryImg').src = '';
+  document.getElementById('telemetryPreviewBox').style.display = 'none';
+  document.getElementById('telemetryUpload').value = '';
+}
+
+// ════════════════════════════════════════════════════════════
+// LEAD CAPTURE & PRINT INTERCEPT
+// ════════════════════════════════════════════════════════════
+function showPrintModal() { document.getElementById('printModal').classList.add('on'); }
+function closePrintModal() { document.getElementById('printModal').classList.remove('on'); }
+
+function submitLeadAndPrint() {
+  const name = document.getElementById('leadName').value.trim();
+  const email = document.getElementById('leadEmail').value.trim();
+  const mobile = document.getElementById('leadMobile').value.trim();
+  const org = document.getElementById('leadOrg').value.trim();
+  
+  const siteName = document.getElementById('siteName').value;
+  const siteSize = document.getElementById('totalArea').value + ' ' + document.getElementById('areaUnit').value;
+  const projSelect = document.getElementById('projType');
+  const siteType = projSelect.options[projSelect.selectedIndex].text;
+  
+  if(!name || !email || !mobile) {
+    toast('⚠ Please enter your name, email, and mobile number.');
+    return;
+  }
+
+  document.getElementById('btnSubmitLead').textContent = "Saving...";
+
+  const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwbYsvOCtID9ftV03jO92saq0H6_rskbrW6yhMmsx0KAX29sIR5AZB1sSl43VaN71At8Q/exec';
+
+  const formData = new FormData();
+  formData.append('name', name);
+  formData.append('email', email);
+  formData.append('mobile', mobile);
+  formData.append('org', org);
+  formData.append('siteName', siteName);
+  formData.append('siteSize', siteSize);
+  formData.append('siteType', siteType);
+
+  fetch(GOOGLE_SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    body: formData
+  }).then(() => {
+    triggerActualPrint();
+  }).catch(e => {
+    console.error(e);
+    triggerActualPrint(); 
+  });
+}
+
+function triggerActualPrint() {
+  closePrintModal();
+  document.getElementById('btnSubmitLead').textContent = "Generate PDF";
+  setTimeout(() => window.print(), 400);
+}
+
+// ════════════════════════════════════════════════════════════
+// TAB RENDERING LOGIC
 // ════════════════════════════════════════════════════════════
 function goTab(n){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
@@ -1202,9 +1376,6 @@ function goTab(n){
   if(n===5&&ST.done)renderT5();
 }
 
-// ════════════════════════════════════════════════════════════
-// SHARED CALC
-// ════════════════════════════════════════════════════════════
 function doEngCalc(){
   const C=ST.compositeC,i=ST.designIntensity,A=ST.activeSqm/10000;
   const perc=+document.getElementById('inPerc').value||18;
@@ -1215,198 +1386,76 @@ function doEngCalc(){
   const drainLen=Math.max(10,Math.round((Q_lhr*.25)/(perc*500)*1000));
   const annDemKL=Math.round(ST.demandLpd*365/1000);
   const selfSuff=Math.min(100,Math.round(harvestKL/annDemKL*100));
-  const surplus=harvestKL-annDemKL;
   const npc=+document.getElementById('sN').value;
-  const score=Math.min(100,Math.round(50+(1-C)*30+(npc/100)*20));
-  const soilNm=SOIL_P[document.getElementById('soilType').value]?.n||'Custom Soil';
-  ST.calc={Q_m3s,Q_lhr,harvestKL,pitVol,tankKL,drainLen,annDemKL,selfSuff,surplus,score,soilNm,A,perc,npc};
+  ST.calc={Q_m3s,Q_lhr,harvestKL,pitVol,tankKL,drainLen,annDemKL,selfSuff,surplus:harvestKL-annDemKL,score:Math.min(100,Math.round(50+(1-C)*30+(npc/100)*20)),soilNm:SOIL_P[document.getElementById('soilType').value]?.n||'Custom Soil',A,perc,npc};
 }
-
 function mMean(){
   const acc=Array(12).fill(0);
   ST.coordData.forEach(d=>d.months.forEach((v,m)=>acc[m]+=v));
   return acc.map(v=>Math.round(v/ST.coordData.length));
 }
 
-// ════════════════════════════════════════════════════════════
-// RENDER TAB 2
-// ════════════════════════════════════════════════════════════
 function renderT2(){
   const data=ST.coordData,ann=data.map(d=>d.total);
   const avg=ann.length ? Math.round(ann.reduce((a,b)=>a+b,0)/ann.length) : 0;
-  const maxY=data.length ? data.reduce((a,b)=>b.total>a.total?b:a) : {total:0, year:'—'};
-  const minY=data.length ? data.reduce((a,b)=>b.total<a.total?b:a) : {total:0, year:'—'};
-  const maxD=ST.ams[0]||{maxDay:'—', year:'—'};
-
   document.getElementById('mAvg').innerHTML=fmt(avg)+' <span class="u">mm</span>';
   document.getElementById('mAvgSub').textContent=ST.liveLoaded?'Live Open-Meteo · 1999–2024':'Approximate data';
-  document.getElementById('mHigh').innerHTML=fmt(maxY.total)+' <span class="u">mm</span>';
-  document.getElementById('mHighLbl').textContent=maxY.year;
-  document.getElementById('mLow').innerHTML=fmt(minY.total)+' <span class="u">mm</span>';
-  document.getElementById('mLowLbl').textContent=minY.year;
-  document.getElementById('mMax').innerHTML=fmt(maxD.maxDay)+' <span class="u">mm</span>';
-  document.getElementById('mMaxLbl').textContent='Max in '+(maxD.year||'—');
+  
+  if(data.length){
+    const maxY=data.reduce((a,b)=>b.total>a.total?b:a), minY=data.reduce((a,b)=>b.total<a.total?b:a);
+    document.getElementById('mHigh').innerHTML=fmt(maxY.total)+' <span class="u">mm</span>'; document.getElementById('mHighLbl').textContent=maxY.year;
+    document.getElementById('mLow').innerHTML=fmt(minY.total)+' <span class="u">mm</span>'; document.getElementById('mLowLbl').textContent=minY.year;
+  }
+  const maxD=ST.ams[0]||{maxDay:'—', year:'—'};
+  document.getElementById('mMax').innerHTML=fmt(maxD.maxDay)+' <span class="u">mm</span>'; document.getElementById('mMaxLbl').textContent='Max in '+(maxD.year||'—');
 
   const storm=gumbel(ST.returnPeriod);ST.designRainfall=storm.dr;ST.designIntensity=storm.di;
   document.getElementById('dRain').textContent=storm.dr;document.getElementById('dInt').textContent=storm.di;
   document.getElementById('dFormula').innerHTML=`Gumbel EVT: x̄=${fmt(avg*0.42,0)} + K_T×σ → ${storm.dr} mm/day → i = ${storm.dr}×0.42 = <strong>${storm.di} mm/hr</strong>`;
-  if(document.getElementById('eI'))document.getElementById('eI').textContent=storm.di;
-  if(document.getElementById('eA'))document.getElementById('eA').textContent=(ST.activeSqm/10000).toFixed(2);
-
+  
   const mm=mMean();
-  dch('chM');
-  CHS['chM']=new Chart(document.getElementById('chM'),{
-    type:'bar',
-    data:{labels:MO,datasets:[{label:'Avg Rainfall (mm)',data:mm,
-      backgroundColor:MO.map((_,i)=>i>=5&&i<=9?'#14452f':i>=10?'#1568a8':'#c4a882'),borderRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{y:{grid:{color:'#e8efeb'}},x:{grid:{display:false}}}}
-  });
-
+  dch('chM'); CHS['chM']=new Chart(document.getElementById('chM'),{type:'bar',data:{labels:MO,datasets:[{label:'Avg Rainfall',data:mm,backgroundColor:'#14452f',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
   const ma5=ann.map((_,i,a)=>{const sl=a.slice(Math.max(0,i-2),i+3);return Math.round(sl.reduce((s,v)=>s+v,0)/sl.length);});
-  dch('chA');
-  CHS['chA']=new Chart(document.getElementById('chA'),{
-    type:'bar',
-    data:{labels:YRS,datasets:[
-      {type:'bar',label:'Annual (mm)',data:ann,backgroundColor:'rgba(20,69,47,.3)',borderRadius:2},
-      {type:'line',label:'5-yr MA',data:ma5,borderColor:'#14452f',borderWidth:2,pointRadius:2,fill:false,tension:.4}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:10},boxWidth:10}}},
-      scales:{y:{grid:{color:'#e8efeb'}},x:{grid:{display:false},ticks:{maxRotation:45,font:{size:9}}}}}
-  });
-
-  document.getElementById('amsTbody').innerHTML=ST.ams.slice(0,15).map(r=>{
-    const hl=r.rank<=3?'style="background:#fef3c7;"':'';
-    return`<tr ${hl}><td><strong>${r.rank}</strong></td><td>${r.year}</td><td><strong>${r.maxDay}</strong></td><td>${r.T} yrs</td></tr>`;
-  }).join('');
+  dch('chA'); CHS['chA']=new Chart(document.getElementById('chA'),{type:'bar',data:{labels:YRS,datasets:[{type:'bar',label:'Annual',data:ann,backgroundColor:'rgba(20,69,47,.3)'},{type:'line',label:'5-yr MA',data:ma5,borderColor:'#14452f',borderWidth:2,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false}});
+  
+  document.getElementById('amsTbody').innerHTML=ST.ams.slice(0,15).map(r=>`<tr><td><strong>${r.rank}</strong></td><td>${r.year}</td><td><strong>${r.maxDay}</strong></td><td>${r.T} yrs</td></tr>`).join('');
 
   const lat=+document.getElementById('lat').value,lon=+document.getElementById('lon').value;
-  const stns=STATIONS.map(s=>({...s,dist:hvs(lat,lon,s.lat,s.lon)})).sort((a,b)=>a.dist-b.dist).slice(0,6);
-  document.getElementById('stnGrid').innerHTML=stns.map((s,i)=>`
-    <div class="stn${i===0?' nearest':''}">
-      <div class="stn-ico ${s.org==='IMD'?'imd':'ks'}">${s.org==='IMD'?'🏛':'📡'}</div>
-      <div><div class="stn-nm">${s.n}${i===0?' ⭐ Nearest':''}</div>
-        <div class="stn-mt">${s.org} · ${s.type}</div>
-        <div class="stn-mt">${s.param}</div>
-        <div class="stn-dt">${s.dist.toFixed(1)} km away · ↑${s.elev}m</div>
-      </div>
-    </div>`).join('');
+  document.getElementById('stnGrid').innerHTML=STATIONS.map(s=>({...s,dist:hvs(lat,lon,s.lat,s.lon)})).sort((a,b)=>a.dist-b.dist).slice(0,6).map((s,i)=>`<div class="stn${i===0?' nearest':''}"><div class="stn-ico">${s.org==='IMD'?'🏛':'📡'}</div><div><div class="stn-nm">${s.n}</div><div class="stn-dt">${s.dist.toFixed(1)} km away</div></div></div>`).join('');
 
   if(ST.stnData.length&&ST.nearestStn){
-    const sAnn=ST.stnData.map(d=>d.total);
-    const sAvg=sAnn.length ? Math.round(sAnn.reduce((a,b)=>a+b,0)/sAnn.length) : 0;
-    const cMaxD=Math.max(...data.map(d=>d.maxDay)),sMaxD=Math.max(...ST.stnData.map(d=>d.maxDay));
-    const var_=sAvg ? Math.round((avg-sAvg)/sAvg*100) : 0;
-    document.getElementById('cmpStnName').textContent=`${ST.nearestStn.n} (${hvs(lat,lon,ST.nearestStn.lat,ST.nearestStn.lon).toFixed(1)}km)`;
-    document.getElementById('cmpBody').innerHTML=[
-      ['25-Yr Avg Annual',fmt(avg)+' mm',fmt(sAvg)+' mm',(var_>=0?'+':'')+var_+'%'],
-      ['Peak Year',fmt(Math.max(...ann))+' mm',fmt(Math.max(...sAnn))+' mm','—'],
-      ['Lowest Year',fmt(Math.min(...ann))+' mm',fmt(Math.min(...sAnn))+' mm','—'],
-      ['Max Daily Event',fmt(cMaxD)+' mm',fmt(sMaxD)+' mm',fmt(Math.abs(cMaxD-sMaxD))+' mm diff'],
-      ['Annual Harvest Potential',fmt(Math.round(avg*ST.activeSqm*(1-ST.compositeC)/1000))+' KL',fmt(Math.round(sAvg*ST.activeSqm*(1-ST.compositeC)/1000))+' KL','—'],
-      ['Elevation Difference',document.getElementById('elev').value+' m',ST.nearestStn.elev+' m',Math.abs(+document.getElementById('elev').value-ST.nearestStn.elev)+' m'],
-    ].map(([p,c,s,v])=>`<tr><td>${p}</td><td class="coord">${c}</td><td class="stnc">${s}</td><td style="font-size:.8rem;color:var(--T3);">${v}</td></tr>`).join('');
+    const sAnn=ST.stnData.map(d=>d.total), sAvg=sAnn.length?Math.round(sAnn.reduce((a,b)=>a+b,0)/sAnn.length):0;
+    document.getElementById('cmpStnName').textContent=`${ST.nearestStn.n}`;
+    document.getElementById('cmpBody').innerHTML=`<tr><td>25-Yr Avg Annual</td><td class="coord">${fmt(avg)} mm</td><td class="stnc">${fmt(sAvg)} mm</td><td></td></tr>`;
     document.getElementById('cmpSection').style.display='block';
-    dch('chCmp');
-    CHS['chCmp']=new Chart(document.getElementById('chCmp'),{
-      type:'line',
-      data:{labels:YRS,datasets:[
-        {label:'📌 Your Coordinates',data:ann,borderColor:'#14452f',backgroundColor:'rgba(20,69,47,.08)',fill:true,tension:.4,pointRadius:2,borderWidth:2},
-        {label:`🏢 ${ST.nearestStn.n.split(' ')[0]}`,data:sAnn,borderColor:'#0d4d80',borderDash:[5,3],fill:false,tension:.4,pointRadius:2,borderWidth:2}
-      ]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:11},boxWidth:12}}},
-        scales:{y:{title:{display:true,text:'Annual Rainfall (mm)'},grid:{color:'#e8efeb'}},x:{grid:{display:false},ticks:{maxRotation:45,font:{size:9}}}}}
-    });
+    dch('chCmp'); CHS['chCmp']=new Chart(document.getElementById('chCmp'),{type:'line',data:{labels:YRS,datasets:[{label:'📌 Your Site',data:ann,borderColor:'#14452f',borderWidth:2},{label:`🏢 ${ST.nearestStn.n}`,data:sAnn,borderColor:'#0d4d80',borderDash:[5,3]}]},options:{responsive:true,maintainAspectRatio:false}});
   }
 
-  const perc=+document.getElementById('inPerc').value,fc=+document.getElementById('inFC').value,
-        ph=+document.getElementById('inPH').value,clay=+document.getElementById('inClay').value,
-        sand=+document.getElementById('inSand').value,silt=+document.getElementById('inSilt').value;
-  const soilNm=SOIL_P[document.getElementById('soilType').value]?.n||'Custom';
-  document.getElementById('soilLblT2').textContent=soilNm+(ST.liveLoaded&&ST.nasaPower?' · Live SoilGrids':'');
-  document.getElementById('sPerc').textContent=perc+' mm/hr';document.getElementById('sFC').textContent=fc+'%';
-  document.getElementById('sPH').textContent=ph;
-  document.getElementById('sDrn').textContent=perc>25?'High':perc>12?'Moderate-High':perc>5?'Moderate':'Low';
-  dch('chSoil');
-  CHS['chSoil']=new Chart(document.getElementById('chSoil'),{
-    type:'doughnut',
-    data:{labels:['Sand','Silt','Clay'],datasets:[{data:[sand,silt,clay],backgroundColor:['#d4a017','#86efac','#c2410c'],borderWidth:0}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:10}}}}
-  });
+  const perc=+document.getElementById('inPerc').value,fc=+document.getElementById('inFC').value,ph=+document.getElementById('inPH').value,clay=+document.getElementById('inClay').value,sand=+document.getElementById('inSand').value,silt=+document.getElementById('inSilt').value;
+  document.getElementById('soilLblT2').textContent=SOIL_P[document.getElementById('soilType').value]?.n||'Custom';
+  document.getElementById('sPerc').textContent=perc+' mm/hr';document.getElementById('sFC').textContent=fc+'%';document.getElementById('sPH').textContent=ph;
+  dch('chSoil'); CHS['chSoil']=new Chart(document.getElementById('chSoil'),{type:'doughnut',data:{labels:['Sand','Silt','Clay'],datasets:[{data:[sand,silt,clay],backgroundColor:['#d4a017','#86efac','#c2410c']}]},options:{responsive:true,maintainAspectRatio:false}});
 
   const mHarv=mm.map(m=>Math.round(m*ST.activeSqm*(1-ST.compositeC)/1000));
   const mDem=Array(12).fill(Math.round(ST.demandLpd*30.5/1000));
   document.getElementById('annHarv').textContent=fmt(mHarv.reduce((a,b)=>a+b,0))+' KL';
-  dch('chVol');
-  CHS['chVol']=new Chart(document.getElementById('chVol'),{
-    type:'bar',
-    data:{labels:MO,datasets:[
-      {label:'Harvest (KL)',data:mHarv,backgroundColor:'rgba(20,69,47,.7)',borderRadius:3},
-      {type:'line',label:'Demand (KL)',data:mDem,borderColor:'#b91c1c',borderWidth:2,pointRadius:0,fill:false}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:10},boxWidth:10}}},
-      scales:{y:{grid:{color:'#e8efeb'}},x:{grid:{display:false}}}}
-  });
+  dch('chVol'); CHS['chVol']=new Chart(document.getElementById('chVol'),{type:'bar',data:{labels:MO,datasets:[{label:'Harvest',data:mHarv,backgroundColor:'rgba(20,69,47,.7)'},{type:'line',label:'Demand',data:mDem,borderColor:'#b91c1c',borderWidth:2,fill:false}]},options:{responsive:true,maintainAspectRatio:false}});
 
   const et0_nasa=ST.et0Monthly;
-  const annualET=et0_nasa.reduce((a,b)=>a+b,0);
-  document.getElementById('etNasa').textContent='~'+fmt(annualET)+' mm';
-  const etGapVal=annualET-avg;
-  document.getElementById('etGap').textContent=(etGapVal>0?'+':'')+fmt(etGapVal)+' mm';
-  document.getElementById('etGap').style.color=etGapVal>0?'var(--R)':'var(--G)';
-  dch('chET');
-  CHS['chET']=new Chart(document.getElementById('chET'),{
-    type:'line',
-    data:{labels:MO,datasets:[
-      {label:'ET₀ NASA POWER (mm)',data:et0_nasa,borderColor:'#d47320',backgroundColor:'rgba(180,90,8,.1)',fill:true,tension:.4,pointRadius:3},
-      {label:'ET₀ Hargreaves (mm)',data:ET0_FALLBACK,borderColor:'#8b5cf6',borderDash:[4,2],fill:false,tension:.4,pointRadius:0},
-      {label:'Rainfall (mm)',data:mm,borderColor:'#14452f',borderDash:[2,3],fill:false,tension:.4,pointRadius:0}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:10},boxWidth:10}}},
-      scales:{y:{grid:{color:'#e8efeb'}},x:{grid:{display:false}}}}
-  });
+  document.getElementById('etNasa').textContent='~'+fmt(et0_nasa.reduce((a,b)=>a+b,0))+' mm';
+  dch('chET'); CHS['chET']=new Chart(document.getElementById('chET'),{type:'line',data:{labels:MO,datasets:[{label:'ET₀ NASA',data:et0_nasa,borderColor:'#d47320',backgroundColor:'rgba(180,90,8,.1)',fill:true},{label:'ET₀ Hargreaves',data:ET0_FALLBACK,borderColor:'#8b5cf6',borderDash:[4,2]},{label:'Rainfall',data:mm,borderColor:'#14452f',borderDash:[2,3]}]},options:{responsive:true,maintainAspectRatio:false}});
 
   if(ST.wbList.length){
-    document.getElementById('wbList').innerHTML=ST.wbList.map(wb=>`
-      <div class="wb-item">
-        <div class="wb-ico">🏞</div>
-        <div><div class="wb-nm">${wb.name}</div>
-          <div class="wb-mt">${wb.type} · ${wb.dist.toFixed(2)} km from site</div>
-        </div>
-      </div>`).join('');
-  } else {
-    document.getElementById('wbList').innerHTML='<div style="padding:1rem;background:var(--s2);border-radius:6px;text-align:center;"><button class="btn btn-s" onclick="triggerWB()">🏞 Fetch Nearby Water Bodies</button></div>';
+    document.getElementById('wbList').innerHTML=ST.wbList.map(wb=>`<div class="wb-item"><div class="wb-ico">🏞</div><div><div class="wb-nm">${wb.name}</div><div class="wb-mt">${wb.type} · ${wb.dist.toFixed(2)} km from site</div></div></div>`).join('');
   }
-
   if(ST.gbifSpecies.length){
-    const combined=SPECIES_BASE.map(base=>{
-      const gbif=ST.gbifSpecies.find(g=>g.sn===base.s);
-      return{...base,count:gbif?.count||0};
-    });
-    const grid = document.getElementById('gbifGrid');
-    grid.style.gridTemplateColumns = '1fr 1fr';
-    grid.innerHTML=combined.map(s=>`
-      <div class="gbif-card">
-        <div style="font-size:1rem;margin-bottom:.2rem;">${s.i}</div>
-        <div class="gbif-n">${s.n}</div>
-        <div class="gbif-s">${s.s}</div>
-        <div class="gbif-r">${s.r}</div>
-        <div class="gbif-cnt">${s.count>0?fmt(s.count)+' GBIF records near site':'Locally native — verify on site'}</div>
-        <div style="font-size:.7rem;color:var(--T2);margin-top:.15rem;">${s.b}</div>
-      </div>`).join('');
-  } else {
-    const grid = document.getElementById('gbifGrid');
-    grid.style.gridTemplateColumns = '1fr';
-    grid.innerHTML='<div style="padding:1rem;background:var(--s2);border-radius:6px;text-align:center;"><button class="btn btn-s" onclick="triggerGBIF()">🦋 Fetch Native Species</button></div>';
+    const combined=SPECIES_BASE.map(base=>({...base,count:(ST.gbifSpecies.find(g=>g.sn===base.s))?.count||0}));
+    document.getElementById('gbifGrid').innerHTML=combined.map(s=>`<div class="gbif-card"><div style="font-size:1rem;margin-bottom:.2rem;">${s.i}</div><div class="gbif-n">${s.n}</div><div class="gbif-s">${s.s}</div><div class="gbif-r">${s.r}</div><div class="gbif-cnt">${s.count>0?fmt(s.count)+' GBIF records near site':'Locally native'}</div></div>`).join('');
   }
 }
 
-// ════════════════════════════════════════════════════════════
-// RENDER TAB 3
-// ════════════════════════════════════════════════════════════
 function renderT3(){
-  doEngCalc();
-  const c=ST.calc;
+  doEngCalc(); const c=ST.calc;
   document.getElementById('eQ').innerHTML=fmt(c.Q_lhr)+'<span class="u">L/hr</span>';
   document.getElementById('eHarv').innerHTML=fmt(c.harvestKL)+'<span class="u">KL/yr</span>';
   document.getElementById('ePit').innerHTML=c.pitVol+'<span class="u">m³</span>';
@@ -1415,438 +1464,67 @@ function renderT3(){
   document.getElementById('eI').textContent=ST.designIntensity;
   document.getElementById('eA').textContent=c.A.toFixed(2);
   document.getElementById('qDisp').innerHTML=c.Q_m3s.toFixed(4)+'<small style="font-size:.8rem;font-weight:400;"> m³/s</small>';
-  document.getElementById('qCtx').innerHTML=c.Q_m3s<.01?'Low · Standard drains adequate':c.Q_m3s<.05?'Moderate · French drain required':'High · Bioswale + robust drain essential';
-  document.getElementById('qPlain').textContent=fmt(c.Q_lhr)+' litres';
   document.getElementById('pitSpec').textContent=`${c.pitVol} m³ total · ${Math.ceil(c.pitVol/5)} pits ×5m³ · 2.5–3m depth · ${c.soilNm} gravel`;
   document.getElementById('tankSpec').textContent=`${fmt(c.tankKL)} KL · 45-day dry buffer · ${(ST.demandLpd/1000).toFixed(1)} KL/day demand`;
   document.getElementById('drainSpec').textContent=`${c.drainLen}m French drain · 300mm perforated pipe · Bioswale vegetation edge`;
 
-  const mm2=mMean();
-  const mHarv=mm2.map(m=>Math.round(m*ST.activeSqm*(1-ST.compositeC)/1000));
-  const mDem=Array(12).fill(Math.round(ST.demandLpd*30.5/1000));
-  dch('chBal');
-  CHS['chBal']=new Chart(document.getElementById('chBal'),{
-    type:'bar',
-    data:{labels:MO,datasets:[
-      {label:'Harvest (KL)',data:mHarv,backgroundColor:'rgba(20,69,47,.7)',borderRadius:3},
-      {label:'Demand (KL)',data:mDem,backgroundColor:'rgba(185,28,28,.55)',borderRadius:3}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:10},boxWidth:10}}},
-      scales:{y:{grid:{color:'#e8efeb'}},x:{grid:{display:false}}}}
-  });
-  document.getElementById('aSupply').textContent=fmt(c.harvestKL)+' KL';
-  document.getElementById('aDemand').textContent=fmt(c.annDemKL)+' KL';
-  const bal=document.getElementById('aBalance');
-  bal.textContent=(c.surplus>=0?'+':'')+fmt(c.surplus)+' KL';
-  bal.style.color=c.surplus>=0?'var(--G)':'var(--R)';
+  const mHarv=mMean().map(m=>Math.round(m*ST.activeSqm*(1-ST.compositeC)/1000)), mDem=Array(12).fill(Math.round(ST.demandLpd*30.5/1000));
+  dch('chBal'); CHS['chBal']=new Chart(document.getElementById('chBal'),{type:'bar',data:{labels:MO,datasets:[{label:'Harvest',data:mHarv,backgroundColor:'rgba(20,69,47,.7)'},{label:'Demand',data:mDem,backgroundColor:'rgba(185,28,28,.55)'}]},options:{responsive:true,maintainAspectRatio:false}});
+  document.getElementById('aSupply').textContent=fmt(c.harvestKL)+' KL'; document.getElementById('aDemand').textContent=fmt(c.annDemKL)+' KL';
+  const bal=document.getElementById('aBalance'); bal.textContent=(c.surplus>=0?'+':'')+fmt(c.surplus)+' KL'; bal.style.color=c.surplus>=0?'var(--G)':'var(--R)';
 
   [[0,'p0r','p0h',null],[5,'p5r','p5h','p5x'],[10,'p10r','p10h','p10x'],[25,'p25r','p25h','p25x']].forEach(([yr,rId,hId,rxId])=>{
     const f=1+(yr/10)*.07;
     document.getElementById(rId).textContent=fmt(Math.round(ST.avgRain*f))+' mm';
     document.getElementById(hId).textContent=fmt(Math.round(c.harvestKL*f))+' KL';
-    if(rxId){
-      const r=yr<=5?'<span class="vg">✓ Low</span>':yr<=10?'<span class="vw">⚠ Moderate</span>':'<span class="vb">⚡ High</span>';
-      document.getElementById(rxId).innerHTML=r;
-    }
+    if(rxId) document.getElementById(rxId).innerHTML=yr<=5?'<span class="vg">✓ Low</span>':yr<=10?'<span class="vw">⚠ Moderate</span>':'<span class="vb">⚡ High</span>';
   });
-  dch('chProj');
-  CHS['chProj']=new Chart(document.getElementById('chProj'),{
-    type:'line',
-    data:{labels:[0,5,10,15,20,25].map(y=>y===0?'Now':'+'+y+'yr'),datasets:[
-      {label:'Rainfall (mm)',data:[0,5,10,15,20,25].map(y=>Math.round(ST.avgRain*(1+(y/10)*.07))),borderColor:'#14452f',fill:false,tension:.4,pointRadius:3},
-      {label:'Harvest (KL)',data:[0,5,10,15,20,25].map(y=>Math.round(c.harvestKL*(1+(y/10)*.07))),borderColor:'#0d4d80',fill:false,tension:.4,pointRadius:3,borderDash:[4,2]}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:10},boxWidth:10}}},
-      scales:{y:{grid:{color:'#e8efeb'}},x:{grid:{display:false}}}}
-  });
+  dch('chProj'); CHS['chProj']=new Chart(document.getElementById('chProj'),{type:'line',data:{labels:['Now','+5yr','+10yr','+15yr','+20yr','+25yr'],datasets:[{label:'Rainfall',data:[0,5,10,15,20,25].map(y=>Math.round(ST.avgRain*(1+(y/10)*.07))),borderColor:'#14452f'},{label:'Harvest',data:[0,5,10,15,20,25].map(y=>Math.round(c.harvestKL*(1+(y/10)*.07))),borderColor:'#0d4d80',borderDash:[4,2]}]},options:{responsive:true,maintainAspectRatio:false}});
 }
 
-// ════════════════════════════════════════════════════════════
-// RENDER TAB 4
-// ════════════════════════════════════════════════════════════
 function renderT4(){
-  if(!ST.calc.Q_m3s)doEngCalc();
-  const c=ST.calc;
-  const lat=+document.getElementById('lat').value,lon=+document.getElementById('lon').value;
-  const ptL=document.getElementById('projType').options[document.getElementById('projType').selectedIndex].text;
+  if(!ST.calc.Q_m3s)doEngCalc(); const c=ST.calc;
   document.getElementById('rptName').textContent=document.getElementById('siteName').value;
-  document.getElementById('rptMeta').textContent=`${Math.abs(lat).toFixed(4)}°N · ${Math.abs(lon).toFixed(4)}°E · ${(ST.activeSqm/1000).toFixed(1)}K m² catchment · ${ptL}`;
-  document.getElementById('rptScore').textContent=c.score+'/100';
-  document.getElementById('rptSelf').textContent=c.selfSuff+'%';
-  ['r1','r2','r3','r4'].forEach((id,i)=>{
-    const [v,u]=[[fmt(c.harvestKL),'KL'],[c.Q_m3s.toFixed(4),'m³/s'],[c.pitVol,'m³'],[fmt(c.tankKL),'KL']][i];
-    document.getElementById(id).innerHTML=v+'<span class="u">'+u+'</span>';
-  });
+  document.getElementById('rptScore').textContent=c.score+'/100'; document.getElementById('rptSelf').textContent=c.selfSuff+'%';
+  ['r1','r2','r3','r4'].forEach((id,i)=>{ const [v,u]=[[fmt(c.harvestKL),'KL'],[c.Q_m3s.toFixed(4),'m³/s'],[c.pitVol,'m³'],[fmt(c.tankKL),'KL']][i]; document.getElementById(id).innerHTML=v+'<span class="u">'+u+'</span>'; });
 
-  const src=ST.liveLoaded?'Open-Meteo Archive (live)':'Approximate';
   document.getElementById('specsTbody').innerHTML=[
-    ['Total Site Area','Input',`${fmt(ST.totalSqm)} m²`,`${(ST.totalSqm/10000).toFixed(2)} Ha`,'Manual entry'],
-    ['Active Catchment (A)','Input',`${fmt(ST.activeSqm)} m²`,`${c.A.toFixed(2)} Ha`,'Manual entry'],
-    ['Composite C','Σ(Cᵢ×%ᵢ)/100','0.90/0.35/0.15/0.05',ST.compositeC.toFixed(2),'ILI™ surface typology'],
-    ['Design Rainfall',`Gumbel EVT T=${ST.returnPeriod}yr`,'AMS mean + K_T×σ',`${ST.designRainfall} mm/day`,src],
+    ['Total Site Area','Input',`${fmt(ST.totalSqm)} m²`,`${(ST.totalSqm/10000).toFixed(2)} Ha`,'Manual'],
+    ['Active Catchment (A)','Input',`${fmt(ST.activeSqm)} m²`,`${c.A.toFixed(2)} Ha`,'Manual'],
+    ['Composite C','Σ(Cᵢ×%ᵢ)/100','0.90/0.35/0.15/0.05',ST.compositeC.toFixed(2),'ILI™'],
+    ['Design Rainfall',`Gumbel EVT T=${ST.returnPeriod}yr`,'AMS mean + K_T×σ',`${ST.designRainfall} mm/day`,'OM'],
     ['Peak Intensity','i = D_rain × 0.42',`${ST.designRainfall} × 0.42`,`${ST.designIntensity} mm/hr`,'Bengaluru Tc≈0.42'],
     ['Peak Runoff (Q)','Q = C·i·A ÷ 360',`${ST.compositeC.toFixed(2)} × ${ST.designIntensity} × ${c.A.toFixed(2)}`,`${c.Q_m3s.toFixed(4)} m³/s`,'Rational Method'],
-    ['Annual Harvest','V = A × R̄ × (1−C)',`${fmt(ST.activeSqm)}m² × ${fmt(Math.round(ST.avgRain))}mm`,`${fmt(c.harvestKL)} KL/yr`,src],
-    ['Recharge Pit','V_pit = Q·t·SF/1000',`${fmt(c.Q_lhr)} L/hr · SF=1.3`,`${c.pitVol} m³`,'ILI™ SuDS sizing'],
+    ['Annual Harvest','V = A × R̄ × (1−C)',`${fmt(ST.activeSqm)}m² × ${fmt(Math.round(ST.avgRain))}mm`,`${fmt(c.harvestKL)} KL/yr`,'OM'],
+    ['Recharge Pit','V_pit = Q·t·SF/1000',`${fmt(c.Q_lhr)} L/hr · SF=1.3`,`${c.pitVol} m³`,'ILI™ SuDS'],
     ['Storage Tank','Demand × 45 days',`${(ST.demandLpd/1000).toFixed(1)} KL/day × 45`,`${fmt(c.tankKL)} KL`,'Dry season buffer'],
-    ['French Drain','L = Q_ov/(perc×500)',`${fmt(c.Q_lhr)} L/hr`,`${c.drainLen} m`,'SoilGrids perc rate'],
-    ['Self-Sufficiency','Supply/Demand × 100',`${fmt(c.harvestKL)}÷${fmt(c.annDemKL)} KL`,`${c.selfSuff}%`,'Water Ledger™'],
-    ['Annual ET₀',ST.liveLoaded?'NASA POWER · Penman':'Hargreaves formula','Monthly Rₐ · Tmean · ΔT',`~${fmt(Math.round(ST.et0Monthly.reduce((a,b)=>a+b,0)))} mm`,ST.liveLoaded?'NASA POWER API':'Hargreaves estimate'],
+    ['French Drain','L = Q_ov/(perc×500)',`${fmt(c.Q_lhr)} L/hr`,`${c.drainLen} m`,'SoilGrids'],
+    ['Self-Sufficiency','Supply/Demand × 100',`${fmt(c.harvestKL)}÷${fmt(c.annDemKL)} KL`,`${c.selfSuff}%`,'Water Ledger™']
   ].map(([p,f,inp,res,src])=>`<tr><td><strong>${p}</strong></td><td style="font-family:monospace;font-size:.75rem;">${f}</td><td style="color:var(--T3);">${inp}</td><td><strong style="color:var(--F);">${res}</strong></td><td><span style="font-size:.7rem;color:var(--T4);">${src}</span></td></tr>`).join('');
 
-  document.getElementById('palGrid').innerHTML=SPECIES_BASE.map(s=>{
-    const gbifRec=ST.gbifSpecies.find(g=>g.sn===s.s);
-    const cnt=gbifRec?.count||0;
-    return`<div class="gbif-card"><div style="font-size:1rem;margin-bottom:.2rem;">${s.i}</div>
-      <div class="gbif-n">${s.n}</div><div class="gbif-s">${s.s}</div>
-      <div class="gbif-r">${s.r}</div>
-      ${cnt>0?`<div class="gbif-cnt">${fmt(cnt)} GBIF records near site</div>`:''}
-      <div style="font-size:.7rem;color:var(--T2);margin-top:.1rem;">${s.b}</div>
-    </div>`;
-  }).join('');
+  document.getElementById('palGrid').innerHTML=SPECIES_BASE.map(s=>`<div class="gbif-card"><div style="font-size:1rem;margin-bottom:.2rem;">${s.i}</div><div class="gbif-n">${s.n}</div><div class="gbif-s">${s.s}</div><div class="gbif-r">${s.r}</div></div>`).join('');
 
-  const mm3=mMean();
-  const effR=mm3.map(v=>Math.round(v*.7));
-  const irrStd=ST.et0Monthly.map((e,i)=>Math.max(0,e-effR[i]));
-  const npc=c.npc;
-  const irrNat=irrStd.map(v=>Math.round(v*(1-npc/100*.75)));
-  dch('chIrrig');
-  CHS['chIrrig']=new Chart(document.getElementById('chIrrig'),{
-    type:'bar',
-    data:{labels:MO,datasets:[
-      {label:'Standard Turf (mm)',data:irrStd,backgroundColor:'rgba(185,28,28,.38)',borderRadius:3},
-      {label:'Native Planting (mm)',data:irrNat,backgroundColor:'rgba(20,69,47,.7)',borderRadius:3}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:10},boxWidth:10}}},
-      scales:{y:{grid:{color:'#e8efeb'}},x:{grid:{display:false}}}}
-  });
-  document.getElementById('nativePctLbl').textContent=npc+'%';
-  document.getElementById('irrigSav').textContent='~'+(20+npc*1.4).toFixed(0)+'–'+(24+npc*1.5).toFixed(0)+'%';
-
-  const ph=+document.getElementById('inPH').value,perc=+document.getElementById('inPerc').value;
-  document.getElementById('soilOrg').textContent=`pH ${ph}: ${ph<5.5?'Lime required to raise above 5.5.':ph>8?'Sulphur application may be needed.':'Suitable for most native species. Add compost 25 kg/m² to raise OC above 1.5%.'}`;
-  document.getElementById('soilPerc').textContent=`Percolation ${perc} mm/hr: ${perc>25?'Excellent drainage — standard pit sizing applies.':perc>10?'Good — percolation trenches at 15m intervals.':perc<5?'Poor drainage — increase pit volume by 50%, consider French drain primary.':'Moderate — standard SuDS design applies.'}`;
-
-  document.getElementById('iliGrid').innerHTML=[
-    {i:'💧',t:'Water Ledger™',v:fmt(c.harvestKL)+' KL',d:'Annual harvest potential documented'},
-    {i:'🌿',t:'Carbon Ledger™',v:Math.round(npc*ST.activeSqm/10000*2.5)+' tCO₂eq',d:'Estimated sequestration potential'},
-    {i:'🏆',t:'GDHI™ Score',v:c.score+' / 100',d:'Greenscape Designz Happiness Index'}
-  ].map(x=>`<div class="ili-c"><div style="font-size:1.6rem;margin-bottom:.5rem;">${x.i}</div>
-    <div style="font-weight:800;color:var(--F);margin-bottom:.25rem;">${x.t}</div>
-    <div class="ili-v">${x.v}</div>
-    <div style="font-size:.78rem;color:var(--T3);margin-top:.3rem;">${x.d}</div></div>`).join('');
+  const effR=mMean().map(v=>Math.round(v*.7)), irrStd=ST.et0Monthly.map((e,i)=>Math.max(0,e-effR[i])), irrNat=irrStd.map(v=>Math.round(v*(1-c.npc/100*.75)));
+  dch('chIrrig'); CHS['chIrrig']=new Chart(document.getElementById('chIrrig'),{type:'bar',data:{labels:MO,datasets:[{label:'Standard Turf (mm)',data:irrStd,backgroundColor:'rgba(185,28,28,.38)'},{label:'Native Planting (mm)',data:irrNat,backgroundColor:'rgba(20,69,47,.7)'}]},options:{responsive:true,maintainAspectRatio:false}});
+  
+  document.getElementById('iliGrid').innerHTML=[{i:'💧',t:'Water Ledger™',v:fmt(c.harvestKL)+' KL',d:'Annual harvest'},{i:'🌿',t:'Carbon Ledger™',v:Math.round(c.npc*ST.activeSqm/10000*2.5)+' tCO₂eq',d:'Est. sequestration'},{i:'🏆',t:'GDHI™ Score',v:c.score+' / 100',d:'Greenscape Designz Index'}].map(x=>`<div class="ili-c"><div style="font-size:1.6rem;margin-bottom:.5rem;">${x.i}</div><div style="font-weight:800;color:var(--F);margin-bottom:.25rem;">${x.t}</div><div class="ili-v">${x.v}</div></div>`).join('');
 }
 
-// ════════════════════════════════════════════════════════════
-// RENDER TAB 5 — DEVELOPER BRIEF
-// ════════════════════════════════════════════════════════════
 function renderT5(){
-  if(!ST.calc.Q_m3s)doEngCalc();
-  const c=ST.calc;
-  const siteName=document.getElementById('siteName').value;
-  const lat=+document.getElementById('lat').value,lon=+document.getElementById('lon').value;
-  const ptL=document.getElementById('projType').options[document.getElementById('projType').selectedIndex].text;
-  document.getElementById('devSite').textContent=siteName;
-  document.getElementById('devMeta').textContent=`${Math.abs(lat).toFixed(4)}°N · ${Math.abs(lon).toFixed(4)}°E · ${(ST.activeSqm/4046.86).toFixed(2)} Acres · ${ptL}`;
-
-  const waterGap=c.surplus<0?`Your site cannot meet its own water demand — a shortfall of ${fmt(Math.abs(c.surplus))} KL per year exists.`:`Your site can produce a surplus of ${fmt(c.surplus)} KL per year — enough to eliminate municipal water dependency.`;
-  document.getElementById('devExec').innerHTML=`This site at <strong>${Math.abs(lat).toFixed(4)}°N</strong> receives an average of <strong>${fmt(Math.round(ST.avgRain))} mm</strong> of rainfall per year. 
-  With a ${(ST.activeSqm/4046.86).toFixed(2)}-acre active catchment and a Composite Runoff Coefficient of <strong>${ST.compositeC.toFixed(2)}</strong>, 
-  the site can harvest approximately <strong>${fmt(c.harvestKL)} kilolitres</strong> of rainwater annually — equivalent to running ${Math.round(c.harvestKL/365*1000/60)} Olympic-size swimming pools worth of water through your site every year. 
-  ${waterGap} Your water self-sufficiency score is <strong>${c.selfSuff}%</strong>. 
-  The one-time infrastructure required (recharge pits, storage tank, bioswale) is estimated at ${fmtRs(calcInfraTotal(c))} with a payback period of <strong>${calcPayback(c)} years</strong>.`;
-
-  const annSaving=Math.round(c.harvestKL*45);
-  const infraTotal=calcInfraTotal(c);
-  const payback=calcPayback(c);
-  const roi10=Math.round(annSaving*10-infraTotal);
-  const propValArea=ST.activeSqm;
-  const propPremium=Math.round(propValArea*3500*.08); 
-  document.getElementById('fSav').textContent=fmtRs(annSaving);
-  document.getElementById('fInv').textContent=fmtRs(infraTotal);
-  document.getElementById('fPay').textContent=payback+' yrs';
-  document.getElementById('fROI').textContent=fmtRs(roi10);
-  document.getElementById('fProp').textContent=fmtRs(propPremium);
-  document.getElementById('fIGBC').textContent=Math.min(15,Math.round(c.selfSuff/10))+' pts';
-  document.getElementById('finNarr').innerHTML=`<strong>The business case in plain numbers:</strong> 
-  Installing a ₹${fmt(Math.round(infraTotal/100000))} lakh RWH system today will save your project ₹${fmt(Math.round(annSaving/1000))}K per year in BWSSB/tanker water costs. 
-  Over 10 years, that is a net return of <strong>${fmtRs(roi10)}</strong> — a ${roi10>0?Math.round(roi10/infraTotal*100)+'% ROI':'projected deficit; supplement with greywater recycling to improve'}. 
-  IGBC Green Home certification — achievable with this infrastructure — commands a <strong>5–12% property value premium</strong> in the Bengaluru market.`;
-
-  const risks={
-    flood:{pct:Math.min(95,Math.round(40+ST.compositeC*50)),lbl:'High' ,desc:`Peak runoff of ${c.Q_lhr.toLocaleString()} L/hr during a ${ST.returnPeriod}-yr storm. Without SuDS, your basement and landscape areas are at flood risk.`,col:'var(--R)'},
-    bore:{pct:Math.round(70+(c.selfSuff<50?20:0)),lbl:'High',desc:`SE Bengaluru groundwater table has dropped 8m in 15 years (CGWB 2023). Borewell dependency without recharge = capital loss at 5–7 year horizon.`,col:'var(--A)'},
-    clim:{pct:75,lbl:'Moderate-High',desc:`IPCC AR6 projects +7% intensity per decade for South India. Infrastructure sized for today's storm will be undersized by 2040 without 25-yr event planning.`,col:'var(--W)'},
-    str:{pct:Math.round(100-c.selfSuff),lbl:c.selfSuff>60?'Low':'Moderate',desc:`Water stress score based on supply/demand gap. ${c.selfSuff}% self-sufficiency means ${100-c.selfSuff}% dependency on external supply.`,col:'#8b5cf6'},
-    reg:{pct:c.selfSuff<30?85:50,lbl:c.selfSuff<30?'Critical':'Moderate',desc:`BBMP mandates RWH for all sites >600m². Non-compliance risks OC (Occupancy Certificate) rejection. BDA also scrutinizes drainage plans.`,col:'var(--R)'},
-    esg:{pct:Math.min(90,Math.round(30+(1-ST.compositeC)*60)),lbl:'Moderate',desc:`ESG disclosure requirements for large residential projects are tightening. Absence of water management data creates rating risk for institutional buyers.`,col:'var(--G)'}
-  };
-  [['Flood','flood'],['Bore','bore'],['Clim','clim'],['Str','str'],['Reg','reg'],['ESG','esg']].forEach(([k,rk])=>{
-    document.getElementById('rf'+k).style.width=risks[rk].pct+'%';
-    document.getElementById('rf'+k).style.background=risks[rk].col;
-    document.getElementById('rv'+k).textContent=risks[rk].pct+'% — '+risks[rk].lbl;
-    document.getElementById('rv'+k).style.color=risks[rk].col;
-    document.getElementById('rd'+k).textContent=risks[rk].desc;
-  });
-  document.getElementById('riskNarr').innerHTML=`<strong>The risk in plain terms:</strong> 
-  Without adequate rainwater infrastructure, this project faces simultaneous exposure on three fronts: 
-  <strong>operational risk</strong> (tanker dependency, borewell failure), <strong>regulatory risk</strong> (OC rejection, BBMP fines), and 
-  <strong>market risk</strong> (no green certification = lower sale price). The cost of inaction — over 10 years — is estimated at 
-  <strong>${fmtRs(Math.round(annSaving*10*1.4))}</strong> in avoided savings plus potential penalties.`;
-
-  const compItems=[
-    {s:'y',t:'BBMP RWH Bylaw — Mandatory',d:`All sites >600 sqm (this site: ${fmt(ST.totalSqm)} sqm) must install RWH. BBMP will not issue OC without compliance certificate. Recommended capacity: ${c.pitVol}m³ recharge + ${fmt(c.tankKL)} KL storage.`,pen:'Penalty: OC withheld. Works stalled. Approx ₹50K–₹2L fine.'},
-    {s:'y',t:'BWSSB Rainwater Harvesting Rules 2009',d:`Plots >2400 sqft or buildings >4 floors must have RWH. Your project qualifies. Storage capacity requirement: minimum 20 litres per sqm of roof area.`,pen:'Non-compliance: BWSSB connection refused or disconnected.'},
-    {s:ST.activeSqm>4046?'y':'w',t:'Karnataka Ground Water (Regulation & Control) Act',d:`Drilling borewells without recharge structures is regulated. Your ${(ST.activeSqm/4046.86).toFixed(2)}-acre site must demonstrate recharge capacity equivalent to extraction.`,pen:'Penalty: Borewell registration rejected. Existing wells can be sealed.'},
-    {s:'w',t:'RERA Environmental Compliance Disclosure',d:`RERA-registered projects above 500 units or 20,000 sqm must disclose environmental sustainability measures including water management in project documentation.`,pen:'Risk: Consumer forum complaints, project delays.'},
-    {s:'n',t:'National Green Tribunal (NGT) Waterbody Protection',d:`If any of the ${ST.wbList.length} water bodies within 5km are within 75m of your boundary, NGT buffer zone rules apply. No construction within 75m of any lake.`,pen:'Penalty: NGT can order demolition of structures in buffer zones.'},
-    {s:'w',t:'IGBC Green Homes / LEED India Certification (Optional)',d:`Voluntary but commercially valuable. Water Efficiency credits require RWH documentation, metering, and reduction targets. This system qualifies for up to 15 WE points.`,pen:'Opportunity: 5–12% premium on green-certified units.'},
-  ];
-  document.getElementById('compList').innerHTML=compItems.map(ci=>`
-    <div class="comp-item">
-      <div class="comp-chk ${ci.s==='y'?'cc-y':ci.s==='n'?'cc-n':'cc-w'}">${ci.s==='y'?'✓':ci.s==='n'?'✕':'⚠'}</div>
-      <div><div class="comp-t">${ci.t}</div><div class="comp-d">${ci.d}</div>
-        <div class="comp-pen">${ci.pen}</div></div>
-    </div>`).join('');
-  document.getElementById('compNarr').innerHTML=`<strong>Compliance summary:</strong> 
-  This project has <strong>2 hard mandatory requirements</strong> (BBMP RWH + BWSSB rules) that must be satisfied before Occupancy Certificate issuance. 
-  Failure to comply blocks the project's final delivery. The ${c.pitVol}m³ recharge pit + ${fmt(c.tankKL)} KL tank specification in this report directly satisfies both requirements. 
-  Engage your Landscape Architect and structural engineer to prepare the RWH compliance certificate for submission with your OC application.`;
-
-  const rm=[
-    {n:1,t:'Install Recharge Pits (Primary)',d:`${Math.ceil(c.pitVol/5)} percolation pits of 5m³ each at catchment low points. Gravel-filled with coconut fibre geotextile. Reduces peak runoff by ${Math.round(ST.compositeC*15)}% and recharges groundwater.`,cost:fmtRs(c.pitVol*25000),cls:'rc-g'},
-    {n:2,t:'Sealed Storage Tank',d:`${fmt(c.tankKL)} KL underground lined sump. Feeds landscape irrigation and utility water during Mar–May dry season. Eliminates tanker dependency.`,cost:fmtRs(c.tankKL*3500),cls:'rc-a'},
-    {n:3,t:'French Drain + Bioswale',d:`${c.drainLen}m linear bioswale along site periphery. Vetiver edge planting. Handles 100-year storm overflow safely. Doubles as GDHI™ pollinator corridor.`,cost:fmtRs(c.drainLen*4500),cls:'rc-a'},
-    {n:4,t:'Native Planting Programme',d:`Increase native cover from ${c.npc}% to 35% using Pongam, Neem, Vetiver. Reduces C from ${ST.compositeC.toFixed(2)} to ${(ST.compositeC*(1-0.15)).toFixed(2)}, adds ${fmt(Math.round(c.harvestKL*.15))} KL harvest/year, sequesters ${Math.round(0.35*ST.activeSqm/10000*2.5)} tCO₂/yr.`,cost:fmtRs(ST.activeSqm*.35*120),cls:'rc-g'},
-    {n:5,t:'Smart Water Metering + GDHI™ Dashboard',d:`Digital water consumption monitoring linked to Baarish™ platform. Real-time harvest vs demand tracking. Enables IGBC certification documentation and ESG reporting.`,cost:fmtRs(85000),cls:'rc-g'}
-  ];
-  document.getElementById('roadmap').innerHTML=rm.map(s=>`
-    <div class="rm-step">
-      <div class="rm-num">${s.n}</div>
-      <div><div class="rm-t">${s.t}</div>
-        <div class="rm-d">${s.d}</div>
-        <div class="rm-cost ${s.cls}">Est. cost: ${s.cost}</div>
-      </div>
-    </div>`).join('');
-
-  document.getElementById('roiTable').innerHTML=[
-    ['Recharge Pits',`Groundwater recharge + runoff control for ${c.pitVol}m³ capacity`,fmtRs(c.pitVol*25000),fmtRs(Math.round(annSaving*.35)),'Groundwater +2m/decade'],
-    ['Storage Tank',`${fmt(c.tankKL)} KL harvested water storage for dry season`,fmtRs(c.tankKL*3500),fmtRs(Math.round(annSaving*.45)),'Tanker cost eliminated'],
-    ['Bioswale / French Drain',`${c.drainLen}m overflow management + pollinator habitat`,fmtRs(c.drainLen*4500),fmtRs(Math.round(annSaving*.1)),'Flood risk reduced 60%'],
-    ['Native Planting',`35% cover target · ${Math.round(0.35*ST.activeSqm/10000*2.5)} tCO₂ sequestration/yr`,fmtRs(ST.activeSqm*.35*120),fmtRs(Math.round(annSaving*.15)),'Irrigation −40%'],
-    ['Smart Metering','Real-time monitoring + IGBC certification support',fmtRs(85000),fmtRs(18000),'IGBC 15 pts → 8% property premium'],
-  ].map(([m,d,c,s,i])=>`<tr><td><strong>${m}</strong></td><td style="font-size:.78rem;color:var(--T3);">${d}</td><td style="color:var(--F);font-weight:700;">${c}</td><td style="color:var(--G);font-weight:700;">${s}</td><td style="font-size:.78rem;">${i}</td></tr>`).join('');
-}
-
-function calcInfraTotal(c){return c.pitVol*25000+c.tankKL*3500+c.drainLen*4500+85000;}
-function calcPayback(c){
-  const saving=c.harvestKL*45;const infra=calcInfraTotal(c);
-  return saving>0?Math.round(infra/saving*10)/10:'—';
-}
-
-// ════════════════════════════════════════════════════════════
-// MANUAL TRIGGERS FOR EXTERNAL APIs
-// ════════════════════════════════════════════════════════════
-async function triggerWB(){
-  const lat=parseFloat(document.getElementById('lat').value);
-  const lon=parseFloat(document.getElementById('lon').value);
-  showLd('Locating nearby water bodies via Overpass OSM...');
-  try {
-    ST.wbList = await fetchWaterBodies(lat, lon);
-    if(!ST.wbList.length){
-      document.getElementById('wbList').innerHTML='<div style="padding:.8rem;background:var(--s2);border-radius:6px;font-size:.82rem;color:var(--T3);">No water bodies found within 5km — site may be on plateau.</div>';
-    } else {
-      document.getElementById('wbList').innerHTML=ST.wbList.map(wb=>`
-        <div class="wb-item">
-          <div class="wb-ico">🏞</div>
-          <div><div class="wb-nm">${wb.name}</div>
-            <div class="wb-mt">${wb.type} · ${wb.dist.toFixed(2)} km from site</div>
-          </div>
-        </div>`).join('');
-    }
-    toast('✅ Water bodies successfully loaded.');
-  } catch(e) { 
-    console.error("Water Body Error:", e);
-    toast('⚠ Error fetching water bodies. Server may be busy.'); 
-  }
-  hideLd();
-}
-  try {
-    ST.wbLis// ════════════════════════════════════════════════════════════
-// API: OVERPASS / OSM (nearby water bodies)
-// ════════════════════════════════════════════════════════════
-async function fetchWaterBodies(lat,lon){
-  updLd('⑤ Overpass API: Locating nearby water bodies within 5km…');
-  const q=`[out:json][timeout:25];(way["natural"="water"](around:5000,${lat},${lon});relation["natural"="water"](around:5000,${lat},${lon});node["natural"="water"](around:5000,${lat},${lon});way["water"="lake"](around:5000,${lat},${lon});way["water"="reservoir"](around:5000,${lat},${lon}););out center 10;`;
+  if(!ST.calc.Q_m3s)doEngCalc(); const c=ST.calc;
+  document.getElementById('devSite').textContent=document.getElementById('siteName').value;
+  const annSaving=Math.round(c.harvestKL*45), infraTotal=c.pitVol*25000+c.tankKL*3500+c.drainLen*4500+85000, payback=annSaving>0?Math.round(infraTotal/annSaving*10)/10:'—', roi10=Math.round(annSaving*10-infraTotal);
   
-  // FIX: Added the mandatory Content-Type header so the API doesn't reject the POST request
-  const res=await fetch('https://overpass-api.de/api/interpreter',{
-    method:'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body:'data='+encodeURIComponent(q)
-  });
+  document.getElementById('devExec').innerHTML=`This site can harvest <strong>${fmt(c.harvestKL)} kilolitres</strong> annually. Your self-sufficiency score is <strong>${c.selfSuff}%</strong>. The one-time infrastructure is estimated at ${fmtRs(infraTotal)} with a payback of <strong>${payback} years</strong>.`;
   
-  if(!res.ok) throw new Error(`Overpass API failed with status: ${res.status}`);
-  const j=await res.json();
-  
-  return j.elements.map(e=>({
-    id:e.id,
-    name:e.tags?.name||e.tags?.['name:en']||'Unnamed Water Body',
-    type:e.tags?.water||e.tags?.natural||'water',
-    lat:e.center?.lat||e.lat||lat,
-    lon:e.center?.lon||e.lon||lon,
-    dist:hvs(lat,lon,e.center?.lat||e.lat||lat,e.center?.lon||e.lon||lon)
-  })).filter(e=>e.dist<5).sort((a,b)=>a.dist-b.dist).slice(0,8);
-}
+  document.getElementById('fSav').textContent=fmtRs(annSaving); document.getElementById('fInv').textContent=fmtRs(infraTotal); document.getElementById('fPay').textContent=payback+' yrs'; document.getElementById('fROI').textContent=fmtRs(roi10); document.getElementById('fProp').textContent=fmtRs(Math.round(ST.activeSqm*3500*.08)); document.getElementById('fIGBC').textContent=Math.min(15,Math.round(c.selfSuff/10))+' pts';
+  document.getElementById('finNarr').innerHTML=`<strong>The business case:</strong> Over 10 years, a net return of <strong>${fmtRs(roi10)}</strong>.`;
 
-// ════════════════════════════════════════════════════════════
-// API: GBIF (native species)
-// ════════════════════════════════════════════════════════════
-async function fetchGBIF(lat,lon){
-  updLd('⑥ GBIF: Querying native species occurrence records…');
-  // Ensuring coordinates are clean floats for the API
-  const cleanLat = parseFloat(lat);
-  const cleanLon = parseFloat(lon);
-  
-  const queries=[
-    {sn:'Pongamia pinnata',key:2952883},
-    {sn:'Azadirachta indica',key:5407105},
-    {sn:'Chrysopogon zizanioides',key:2703613},
-    {sn:'Phyllanthus emblica',key:5329059},
-    {sn:'Erythrina variegata',key:2945456},
-    {sn:'Cynodon dactylon',key:2703630},
-    {sn:'Ficus benghalensis',key:3190246},
-    {sn:'Curcuma aromatica',key:2757767}
-  ];
-  
-  const results=await Promise.allSettled(queries.map(async q=>{
-    const url=`https://api.gbif.org/v1/occurrence/search?taxonKey=${q.key}&decimalLatitude=${cleanLat-0.5},${cleanLat+0.5}&decimalLongitude=${cleanLon-0.5},${cleanLon+0.5}&limit=1`;
-    const res=await fetch(url);
-    if(!res.ok) throw new Error('GBIF Error');
-    const j=await res.json();
-    return{...q,count:j.count||0};
-  }));
-  
-  return results.filter(r=>r.status==='fulfilled').map(r=>r.value).sort((a,b)=>b.count-a.count);
-}
+  const risks={flood:{pct:Math.min(95,Math.round(40+ST.compositeC*50)),col:'var(--R)'},bore:{pct:Math.round(70+(c.selfSuff<50?20:0)),col:'var(--A)'},clim:{pct:75,col:'var(--W)'},str:{pct:Math.round(100-c.selfSuff),col:'#8b5cf6'},reg:{pct:c.selfSuff<30?85:50,col:'var(--R)'},esg:{pct:Math.min(90,Math.round(30+(1-ST.compositeC)*60)),col:'var(--G)'}};
+  [['Flood','flood'],['Bore','bore'],['Clim','clim'],['Str','str'],['Reg','reg'],['ESG','esg']].forEach(([k,rk])=>{ document.getElementById('rf'+k).style.width=risks[rk].pct+'%'; document.getElementById('rf'+k).style.background=risks[rk].col; });
 
-// ════════════════════════════════════════════════════════════
-// TELEMETRY UPLOAD & OCR (TESSERACT.JS)
-// ════════════════════════════════════════════════════════════
-async function handleTelemetryUpload(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const previewBox = document.getElementById('telemetryPreviewBox');
-  const imgElement = document.getElementById('telemetryImg');
-  
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    imgElement.src = e.target.result;
-    previewBox.style.display = 'block';
-  };
-  reader.readAsDataURL(file);
-
-  showLd('Running OCR on Telemetry Screenshot...');
-  updLd('Analyzing text (this may take a few seconds)...');
-  
-  try {
-    const worker = await Tesseract.createWorker('eng');
-    const ret = await worker.recognize(file);
-    const rawText = ret.data.text;
-    await worker.terminate();
-    
-    console.log("Raw OCR Output:\n", rawText);
-    toast('✅ OCR Complete. Check browser console for raw text.');
-    
-    parseTelemetryData(rawText);
-  } catch (error) {
-    console.error("OCR Error:", error);
-    toast('⚠ OCR failed. Please enter values manually.');
-  }
-  
-  hideLd();
-}
-
-function parseTelemetryData(text) {
-  // Regex to hunt for specific labels KSNDMC/IMD uses
-  const rainMatch = text.match(/Rainfall[\s:]*([\d.]+)/i);
-  const tempMatch = text.match(/Temp(?:erature)?[\s:]*([\d.]+)/i);
-
-  if(rainMatch && rainMatch[1]) {
-    console.log("Extracted Rainfall:", parseFloat(rainMatch[1]));
-  }
-  if(tempMatch && tempMatch[1]) {
-    console.log("Extracted Temperature:", parseFloat(tempMatch[1]));
-  }
-}
-
-function clearTelemetry() {
-  document.getElementById('telemetryImg').src = '';
-  document.getElementById('telemetryPreviewBox').style.display = 'none';
-  document.getElementById('telemetryUpload').value = '';
-}
-
-// ════════════════════════════════════════════════════════════
-// LEAD CAPTURE & PRINT INTERCEPT (GOOGLE SHEETS INTEGRATION)
-// ════════════════════════════════════════════════════════════
-function showPrintModal() { document.getElementById('printModal').classList.add('on'); }
-function closePrintModal() { document.getElementById('printModal').classList.remove('on'); }
-
-function submitLeadAndPrint() {
-  // Grab data from the Modal
-  const name = document.getElementById('leadName').value.trim();
-  const email = document.getElementById('leadEmail').value.trim();
-  const mobile = document.getElementById('leadMobile').value.trim();
-  const org = document.getElementById('leadOrg').value.trim();
-  
-  // Auto-grab data already filled out on Tab 1
-  const siteName = document.getElementById('siteName').value;
-  const siteSize = document.getElementById('totalArea').value + ' ' + document.getElementById('areaUnit').value;
-  
-  const projSelect = document.getElementById('projType');
-  const siteType = projSelect.options[projSelect.selectedIndex].text;
-  
-  // Basic validation
-  if(!name || !email || !mobile) {
-    toast('⚠ Please enter your name, email, and mobile number.');
-    return;
-  }
-
-  document.getElementById('btnSubmitLead').textContent = "Saving...";
-
-  // !!! REPLACE THIS URL WITH YOUR GOOGLE APPS SCRIPT WEB APP URL !!!
-  const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwbYsvOCtID9ftV03jO92saq0H6_rskbrW6yhMmsx0KAX29sIR5AZB1sSl43VaN71At8Q/exec';
-
-  if (GOOGLE_SCRIPT_URL !== 'https://script.google.com/macros/s/AKfycbwbYsvOCtID9ftV03jO92saq0H6_rskbrW6yhMmsx0KAX29sIR5AZB1sSl43VaN71At8Q/exec') {
-    const formData = new FormData();
-    formData.append('name', name);
-    formData.append('email', email);
-    formData.append('mobile', mobile);
-    formData.append('org', org);
-    formData.append('siteName', siteName);
-    formData.append('siteSize', siteSize);
-    formData.append('siteType', siteType);
-
-    fetch(GOOGLE_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      body: formData
-    }).then(() => {
-      triggerActualPrint();
-    }).catch(e => {
-      console.error(e);
-      triggerActualPrint(); // Trigger print anyway so the user isn't stuck
-    });
-  } else {
-    triggerActualPrint(); 
-  }
-}
-
-function triggerActualPrint() {
-  closePrintModal();
-  document.getElementById('btnSubmitLead').textContent = "Generate PDF";
-  setTimeout(() => window.print(), 300);
+  document.getElementById('compList').innerHTML=`<div class="comp-item"><div class="comp-chk cc-y">✓</div><div><div class="comp-t">BBMP RWH Bylaw</div><div class="comp-d">Mandatory for sites >600 sqm. Needs ${c.pitVol}m³ recharge + ${fmt(c.tankKL)} KL storage.</div></div></div>`;
+  document.getElementById('roadmap').innerHTML=`<div class="rm-step"><div class="rm-num">1</div><div><div class="rm-t">Install Pits & Tank</div><div class="rm-cost rc-g">Est. ${fmtRs(infraTotal)}</div></div></div>`;
 }
 </script>
 </body>
