@@ -1648,7 +1648,8 @@ function calcPayback(c){
 // MANUAL TRIGGERS FOR EXTERNAL APIs
 // ════════════════════════════════════════════════════════════
 async function triggerWB(){
-  const lat=+document.getElementById('lat').value,lon=+document.getElementById('lon').value;
+  const lat=parseFloat(document.getElementById('lat').value);
+  const lon=parseFloat(document.getElementById('lon').value);
   showLd('Locating nearby water bodies via Overpass OSM...');
   try {
     ST.wbList = await fetchWaterBodies(lat, lon);
@@ -1663,31 +1664,70 @@ async function triggerWB(){
           </div>
         </div>`).join('');
     }
-  } catch(e) { toast('⚠ Error fetching water bodies'); }
+    toast('✅ Water bodies successfully loaded.');
+  } catch(e) { 
+    console.error("Water Body Error:", e);
+    toast('⚠ Error fetching water bodies. Server may be busy.'); 
+  }
   hideLd();
 }
-
-async function triggerGBIF(){
-  const lat=+document.getElementById('lat').value,lon=+document.getElementById('lon').value;
-  showLd('Querying GBIF occurrence records...');
   try {
-    ST.gbifSpecies = await fetchGBIF(lat, lon);
-    const combined=SPECIES_BASE.map(base=>{
-      const gbif=ST.gbifSpecies.find(g=>g.sn===base.s);
-      return{...base,count:gbif?.count||0};
-    });
-    const grid = document.getElementById('gbifGrid');
-    grid.style.gridTemplateColumns = '1fr 1fr';
-    grid.innerHTML=combined.map(s=>`
-      <div class="gbif-card">
-        <div style="font-size:1rem;margin-bottom:.2rem;">${s.i}</div>
-        <div class="gbif-n">${s.n}</div><div class="gbif-s">${s.s}</div>
-        <div class="gbif-r">${s.r}</div>
-        <div class="gbif-cnt">${s.count>0?fmt(s.count)+' GBIF records near site':'Locally native — verify on site'}</div>
-        <div style="font-size:.7rem;color:var(--T2);margin-top:.15rem;">${s.b}</div>
-      </div>`).join('');
-  } catch(e) { toast('⚠ Error fetching species data'); }
-  hideLd();
+    ST.wbLis// ════════════════════════════════════════════════════════════
+// API: OVERPASS / OSM (nearby water bodies)
+// ════════════════════════════════════════════════════════════
+async function fetchWaterBodies(lat,lon){
+  updLd('⑤ Overpass API: Locating nearby water bodies within 5km…');
+  const q=`[out:json][timeout:25];(way["natural"="water"](around:5000,${lat},${lon});relation["natural"="water"](around:5000,${lat},${lon});node["natural"="water"](around:5000,${lat},${lon});way["water"="lake"](around:5000,${lat},${lon});way["water"="reservoir"](around:5000,${lat},${lon}););out center 10;`;
+  
+  // FIX: Added the mandatory Content-Type header so the API doesn't reject the POST request
+  const res=await fetch('https://overpass-api.de/api/interpreter',{
+    method:'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body:'data='+encodeURIComponent(q)
+  });
+  
+  if(!res.ok) throw new Error(`Overpass API failed with status: ${res.status}`);
+  const j=await res.json();
+  
+  return j.elements.map(e=>({
+    id:e.id,
+    name:e.tags?.name||e.tags?.['name:en']||'Unnamed Water Body',
+    type:e.tags?.water||e.tags?.natural||'water',
+    lat:e.center?.lat||e.lat||lat,
+    lon:e.center?.lon||e.lon||lon,
+    dist:hvs(lat,lon,e.center?.lat||e.lat||lat,e.center?.lon||e.lon||lon)
+  })).filter(e=>e.dist<5).sort((a,b)=>a.dist-b.dist).slice(0,8);
+}
+
+// ════════════════════════════════════════════════════════════
+// API: GBIF (native species)
+// ════════════════════════════════════════════════════════════
+async function fetchGBIF(lat,lon){
+  updLd('⑥ GBIF: Querying native species occurrence records…');
+  // Ensuring coordinates are clean floats for the API
+  const cleanLat = parseFloat(lat);
+  const cleanLon = parseFloat(lon);
+  
+  const queries=[
+    {sn:'Pongamia pinnata',key:2952883},
+    {sn:'Azadirachta indica',key:5407105},
+    {sn:'Chrysopogon zizanioides',key:2703613},
+    {sn:'Phyllanthus emblica',key:5329059},
+    {sn:'Erythrina variegata',key:2945456},
+    {sn:'Cynodon dactylon',key:2703630},
+    {sn:'Ficus benghalensis',key:3190246},
+    {sn:'Curcuma aromatica',key:2757767}
+  ];
+  
+  const results=await Promise.allSettled(queries.map(async q=>{
+    const url=`https://api.gbif.org/v1/occurrence/search?taxonKey=${q.key}&decimalLatitude=${cleanLat-0.5},${cleanLat+0.5}&decimalLongitude=${cleanLon-0.5},${cleanLon+0.5}&limit=1`;
+    const res=await fetch(url);
+    if(!res.ok) throw new Error('GBIF Error');
+    const j=await res.json();
+    return{...q,count:j.count||0};
+  }));
+  
+  return results.filter(r=>r.status==='fulfilled').map(r=>r.value).sort((a,b)=>b.count-a.count);
 }
 
 // ════════════════════════════════════════════════════════════
