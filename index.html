@@ -6,6 +6,7 @@
 <title>Baarish™ — Rain Intelligence · Greenscape Designz</title>
 <meta name="description" content="Coordinate-based rainwater harvesting intelligence for Karnataka. 25-year climate data, soil analysis, engineering sizing, and developer compliance.">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
 :root{
   --bg:#f0f4f2;--sf:#fff;--s2:#e8efeb;--s3:#dce8e1;
@@ -198,10 +199,51 @@ body{font-family:var(--ff);background:var(--bg);color:var(--T);min-height:100vh;
 .ldsteps{margin-top:.5rem;font-size:.78rem;opacity:.75;max-width:340px;text-align:center;line-height:1.65;}
 .toast{position:fixed;bottom:1.4rem;right:1.4rem;background:var(--F);color:#fff;padding:.7rem 1.1rem;border-radius:8px;font-size:.83rem;font-weight:600;box-shadow:var(--shl);z-index:500;transform:translateY(80px);opacity:0;transition:all .3s;}
 .toast.on{transform:translateY(0);opacity:1;}
-@media print{.snav,.hdr-r,.btn,.loading,.toast{display:none!important;}.panel{display:block!important;page-break-after:always;}}
+
+/* PRE-PRINT MODAL */
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:1000; align-items:center; justify-content:center; padding:1rem; }
+.modal-overlay.on { display:flex; }
+.modal-box { background:#fff; border-radius:var(--r); padding:2rem; width:100%; max-width:400px; box-shadow:var(--shl); }
+.modal-title { font-size:1.2rem; font-weight:800; color:var(--F); margin-bottom:.5rem; }
+.modal-desc { font-size:.85rem; color:var(--T2); margin-bottom:1.5rem; line-height:1.5; }
+
+/* PRINT STYLES */
+@media print{
+  .snav,.hdr-r,.btn,.loading,.toast{display:none!important;}
+  .panel{display:block!important;page-break-after:always;}
+  #telemetryUpload, .btn[onclick="clearTelemetry()"], #printModal { display: none !important; }
+}
 </style>
 </head>
 <body>
+
+<div class="modal-overlay" id="printModal">
+  <div class="modal-box">
+    <div class="modal-title">Download Developer Brief</div>
+    <div class="modal-desc">Please provide your details to generate the official print-ready report.</div>
+    <div class="fg">
+      <label class="fl">Full Name</label>
+      <input type="text" class="fi" id="leadName" placeholder="Enter your name">
+    </div>
+    <div class="fg">
+      <label class="fl">Email Address</label>
+      <input type="email" class="fi" id="leadEmail" placeholder="name@company.com">
+    </div>
+    <div class="fg">
+      <label class="fl">Mobile Number</label>
+      <input type="tel" class="fi" id="leadMobile" placeholder="+91 98765 43210">
+    </div>
+    <div class="fg">
+      <label class="fl">Organisation / Company</label>
+      <input type="text" class="fi" id="leadOrg" placeholder="Enter your organisation">
+    </div>
+    <div style="display:flex; gap:.8rem; margin-top:1.5rem;">
+      <button class="btn btn-s" style="flex:1;" onclick="closePrintModal()">Cancel</button>
+      <button class="btn btn-p" style="flex:1;" id="btnSubmitLead" onclick="submitLeadAndPrint()">Generate PDF</button>
+    </div>
+  </div>
+</div>
+
 <div class="loading" id="ldOverlay">
   <div class="spin"></div>
   <div style="font-size:.95rem;font-weight:700;" id="ldTitle">Fetching live data…</div>
@@ -217,7 +259,7 @@ body{font-family:var(--ff);background:var(--bg);color:var(--T);min-height:100vh;
   </div>
   <div class="hdr-r">
     <span class="badge b-wait" id="gBadge"><span class="bdot"></span>Awaiting Fetch</span>
-    <button class="btn btn-s" style="font-size:.75rem;padding:.38rem .8rem;background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2);" onclick="window.print()">⬇ Export</button>
+    <button class="btn btn-s" style="font-size:.75rem;padding:.38rem .8rem;background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2);" onclick="showPrintModal()">⬇ Export</button>
   </div>
 </header>
 
@@ -448,6 +490,22 @@ body{font-family:var(--ff);background:var(--bg);color:var(--T);min-height:100vh;
     </div>
   </div>
 
+  <div class="card" style="margin-bottom:1.4rem;">
+    <div class="ct">📸 Live Telemetry & Synoptic Feed</div>
+    <div class="cs">Upload a screenshot of the live KSNDMC or IMD feed to attach visual proof to your project report. OCR will attempt to read the numbers.</div>
+    
+    <div class="fg" style="margin-bottom:0;">
+      <input type="file" id="telemetryUpload" accept="image/*" class="fi" style="padding:0.4rem; cursor:pointer;" onchange="handleTelemetryUpload(event)">
+    </div>
+    
+    <div id="telemetryPreviewBox" style="display:none; margin-top:1rem; border:1.5px dashed var(--bd); border-radius:var(--rs); padding:0.5rem; text-align:center; background:var(--s2);">
+      <img id="telemetryImg" src="" alt="KSNDMC/IMD Telemetry" style="max-width:100%; max-height:500px; border-radius:4px; box-shadow:var(--sh);">
+      <div style="margin-top:0.8rem;">
+        <button class="btn btn-s" onclick="clearTelemetry()">🗑 Remove Image</button>
+      </div>
+    </div>
+  </div>
+
   <div class="g2" style="margin-bottom:1.4rem;">
     <div class="card">
       <div class="ct">Annual Maximum Series (AMS)</div>
@@ -633,7 +691,7 @@ body{font-family:var(--ff);background:var(--bg);color:var(--T);min-height:100vh;
 <div class="panel" id="tab4">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.9rem;margin-bottom:1.4rem;">
     <div class="sh" style="margin-bottom:0;"><div class="st">📋 Landscape Architect Report</div><div class="sd">Technical specs, planting palette, soil management, and stormwater design. DPR-ready.</div></div>
-    <button class="btn btn-p" onclick="window.print()">⬇ Print Report</button>
+    <button class="btn btn-p" onclick="showPrintModal()">⬇ Print Report</button>
   </div>
   <div class="rph">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
@@ -706,7 +764,7 @@ body{font-family:var(--ff);background:var(--bg);color:var(--T);min-height:100vh;
 <div class="panel" id="tab5">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.9rem;margin-bottom:1.4rem;">
     <div class="sh" style="margin-bottom:0;"><div class="st">🏢 Developer Brief — Plain Language Intelligence</div><div class="sd">Financial case · Risk exposure · Regulatory compliance · Net-zero water roadmap</div></div>
-    <button class="btn btn-p" onclick="window.print()">⬇ Print Brief</button>
+    <button class="btn btn-p" onclick="showPrintModal()">⬇ Print Brief</button>
   </div>
 
   <div class="rph" style="margin-bottom:1.4rem;">
@@ -763,7 +821,7 @@ body{font-family:var(--ff);background:var(--bg);color:var(--T);min-height:100vh;
 
   <div style="display:flex;justify-content:space-between;margin-top:1.4rem;">
     <button class="btn btn-s" onclick="goTab(4)">← Landscape Report</button>
-    <button class="btn btn-p" onclick="window.print()">⬇ Download Full Brief</button>
+    <button class="btn btn-p" onclick="showPrintModal()">⬇ Download Full Brief</button>
   </div>
 </div>
 
@@ -1015,48 +1073,6 @@ async function fetchSoilGrids(lat,lon){
 }
 
 // ════════════════════════════════════════════════════════════
-// API: OVERPASS / OSM (nearby water bodies)
-// ════════════════════════════════════════════════════════════
-async function fetchWaterBodies(lat,lon){
-  updLd('⑤ Overpass API: Locating nearby water bodies within 5km…');
-  const q=`[out:json][timeout:15];(way["natural"="water"](around:5000,${lat},${lon});relation["natural"="water"](around:5000,${lat},${lon});node["natural"="water"](around:5000,${lat},${lon});way["water"="lake"](around:5000,${lat},${lon});way["water"="reservoir"](around:5000,${lat},${lon}););out center 10;`;
-  const res=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(q)});
-  if(!res.ok)throw new Error('Overpass fail');
-  const j=await res.json();
-  return j.elements.map(e=>({
-    id:e.id,
-    name:e.tags?.name||e.tags?.['name:en']||'Unnamed Water Body',
-    type:e.tags?.water||e.tags?.natural||'water',
-    lat:e.center?.lat||e.lat||lat,
-    lon:e.center?.lon||e.lon||lon,
-    dist:hvs(lat,lon,e.center?.lat||e.lat||lat,e.center?.lon||e.lon||lon)
-  })).filter(e=>e.dist<5).sort((a,b)=>a.dist-b.dist).slice(0,8);
-}
-
-// ════════════════════════════════════════════════════════════
-// API: GBIF (native species)
-// ════════════════════════════════════════════════════════════
-async function fetchGBIF(lat,lon){
-  updLd('⑥ GBIF: Querying native species occurrence records…');
-  const queries=[
-    {sn:'Pongamia pinnata',key:2952883},
-    {sn:'Azadirachta indica',key:5407105},
-    {sn:'Chrysopogon zizanioides',key:2703613},
-    {sn:'Phyllanthus emblica',key:5329059},
-    {sn:'Erythrina variegata',key:2945456},
-    {sn:'Cynodon dactylon',key:2703630},
-    {sn:'Ficus benghalensis',key:3190246},
-    {sn:'Curcuma aromatica',key:2757767}
-  ];
-  const results=await Promise.allSettled(queries.map(async q=>{
-    const url=`https://api.gbif.org/v1/occurrence/search?taxonKey=${q.key}&decimalLatitude=${lat-0.5},${lat+0.5}&decimalLongitude=${lon-0.5},${lon+0.5}&limit=1`;
-    const res=await fetch(url);const j=await res.json();
-    return{...q,count:j.count||0};
-  }));
-  return results.filter(r=>r.status==='fulfilled').map(r=>r.value).sort((a,b)=>b.count-a.count);
-}
-
-// ════════════════════════════════════════════════════════════
 // MAIN FETCH ALL — Parallel requests
 // ════════════════════════════════════════════════════════════
 async function fetchAll(){
@@ -1065,18 +1081,15 @@ async function fetchAll(){
   updLd('Initialising parallel data requests…');
   const errs=[];
   try{
-    // Sequential for display progress; parallelize independent ones
     [ST.coordData,ST.currentWx]=await Promise.all([
       fetchOMArchive(lat,lon,'Your Coordinates').catch(e=>{errs.push('Rainfall');return[];}),
       fetchOMCurrent(lat,lon).catch(e=>{errs.push('Current Weather');return null;})
     ]);
 
-    // Nearest station fetch
     const stWithDist=STATIONS.map(s=>({...s,dist:hvs(lat,lon,s.lat,s.lon)})).sort((a,b)=>a.dist-b.dist);
     ST.nearestStn=stWithDist[0];
     ST.stnData=await fetchOMArchive(ST.nearestStn.lat,ST.nearestStn.lon,ST.nearestStn.n).catch(e=>{errs.push('Station Data');return[];});
 
-    // Parallel: NASA, SoilGrids (OSM and GBIF removed for manual triggering)
     const [nasa,soil]=await Promise.all([
       fetchNASAPower(lat,lon).catch(e=>{errs.push('NASA POWER');return null;}),
       fetchSoilGrids(lat,lon).catch(e=>{errs.push('SoilGrids');return null;})
@@ -1084,7 +1097,7 @@ async function fetchAll(){
 
     ST.nasaPower=nasa;
     
-    // SAFEGUARD: Inject fallback data if Open-Meteo failed to prevent empty array crashes
+    // SAFEGUARD: Inject fallback data if Open-Meteo failed
     if(!ST.coordData || !ST.coordData.length){
       errs.push('Open-Meteo Archive (using fallback)');
       const seeds=[1.0,.82,1.12,.67,1.05,.78,1.28,.91,1.03,.88,1.15,.72,1.09,.84,1.22,.76,.99,1.18,.83,1.07,.71,1.25,.94,1.01,.87];
@@ -1113,7 +1126,6 @@ async function fetchAll(){
       ST.designRainfall=storm.dr;ST.designIntensity=storm.di;
     }
 
-    // Update current conditions widgets
     if(ST.currentWx){
       const cx=ST.currentWx;
       ['cxTemp','cxHum','cxRain','cxWind','cxCloud'].forEach((id,i)=>{
@@ -1148,7 +1160,7 @@ async function fetchAll(){
 }
 
 // ════════════════════════════════════════════════════════════
-// RUN WITHOUT LIVE DATA (manual entry)
+// RUN WITHOUT LIVE DATA
 // ════════════════════════════════════════════════════════════
 function runAnalysis(){
   calcC();cvtArea();
@@ -1210,7 +1222,6 @@ function doEngCalc(){
   ST.calc={Q_m3s,Q_lhr,harvestKL,pitVol,tankKL,drainLen,annDemKL,selfSuff,surplus,score,soilNm,A,perc,npc};
 }
 
-// Monthly mean from coord data
 function mMean(){
   const acc=Array(12).fill(0);
   ST.coordData.forEach(d=>d.months.forEach((v,m)=>acc[m]+=v));
@@ -1269,7 +1280,6 @@ function renderT2(){
     return`<tr ${hl}><td><strong>${r.rank}</strong></td><td>${r.year}</td><td><strong>${r.maxDay}</strong></td><td>${r.T} yrs</td></tr>`;
   }).join('');
 
-  // Station cards
   const lat=+document.getElementById('lat').value,lon=+document.getElementById('lon').value;
   const stns=STATIONS.map(s=>({...s,dist:hvs(lat,lon,s.lat,s.lon)})).sort((a,b)=>a.dist-b.dist).slice(0,6);
   document.getElementById('stnGrid').innerHTML=stns.map((s,i)=>`
@@ -1282,7 +1292,6 @@ function renderT2(){
       </div>
     </div>`).join('');
 
-  // Station comparison
   if(ST.stnData.length&&ST.nearestStn){
     const sAnn=ST.stnData.map(d=>d.total);
     const sAvg=sAnn.length ? Math.round(sAnn.reduce((a,b)=>a+b,0)/sAnn.length) : 0;
@@ -1310,7 +1319,6 @@ function renderT2(){
     });
   }
 
-  // Soil
   const perc=+document.getElementById('inPerc').value,fc=+document.getElementById('inFC').value,
         ph=+document.getElementById('inPH').value,clay=+document.getElementById('inClay').value,
         sand=+document.getElementById('inSand').value,silt=+document.getElementById('inSilt').value;
@@ -1326,7 +1334,6 @@ function renderT2(){
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:10}}}}
   });
 
-  // Volume
   const mHarv=mm.map(m=>Math.round(m*ST.activeSqm*(1-ST.compositeC)/1000));
   const mDem=Array(12).fill(Math.round(ST.demandLpd*30.5/1000));
   document.getElementById('annHarv').textContent=fmt(mHarv.reduce((a,b)=>a+b,0))+' KL';
@@ -1341,7 +1348,6 @@ function renderT2(){
       scales:{y:{grid:{color:'#e8efeb'}},x:{grid:{display:false}}}}
   });
 
-  // ET0 chart (NASA vs Hargreaves)
   const et0_nasa=ST.et0Monthly;
   const annualET=et0_nasa.reduce((a,b)=>a+b,0);
   document.getElementById('etNasa').textContent='~'+fmt(annualET)+' mm';
@@ -1360,7 +1366,6 @@ function renderT2(){
       scales:{y:{grid:{color:'#e8efeb'}},x:{grid:{display:false}}}}
   });
 
-  // Water bodies (State Preservation)
   if(ST.wbList.length){
     document.getElementById('wbList').innerHTML=ST.wbList.map(wb=>`
       <div class="wb-item">
@@ -1373,7 +1378,6 @@ function renderT2(){
     document.getElementById('wbList').innerHTML='<div style="padding:1rem;background:var(--s2);border-radius:6px;text-align:center;"><button class="btn btn-s" onclick="triggerWB()">🏞 Fetch Nearby Water Bodies</button></div>';
   }
 
-  // GBIF species (State Preservation)
   if(ST.gbifSpecies.length){
     const combined=SPECIES_BASE.map(base=>{
       const gbif=ST.gbifSpecies.find(g=>g.sn===base.s);
@@ -1474,7 +1478,6 @@ function renderT4(){
     document.getElementById(id).innerHTML=v+'<span class="u">'+u+'</span>';
   });
 
-  // Specs table
   const src=ST.liveLoaded?'Open-Meteo Archive (live)':'Approximate';
   document.getElementById('specsTbody').innerHTML=[
     ['Total Site Area','Input',`${fmt(ST.totalSqm)} m²`,`${(ST.totalSqm/10000).toFixed(2)} Ha`,'Manual entry'],
@@ -1491,7 +1494,6 @@ function renderT4(){
     ['Annual ET₀',ST.liveLoaded?'NASA POWER · Penman':'Hargreaves formula','Monthly Rₐ · Tmean · ΔT',`~${fmt(Math.round(ST.et0Monthly.reduce((a,b)=>a+b,0)))} mm`,ST.liveLoaded?'NASA POWER API':'Hargreaves estimate'],
   ].map(([p,f,inp,res,src])=>`<tr><td><strong>${p}</strong></td><td style="font-family:monospace;font-size:.75rem;">${f}</td><td style="color:var(--T3);">${inp}</td><td><strong style="color:var(--F);">${res}</strong></td><td><span style="font-size:.7rem;color:var(--T4);">${src}</span></td></tr>`).join('');
 
-  // Planting palette with GBIF counts
   document.getElementById('palGrid').innerHTML=SPECIES_BASE.map(s=>{
     const gbifRec=ST.gbifSpecies.find(g=>g.sn===s.s);
     const cnt=gbifRec?.count||0;
@@ -1503,7 +1505,6 @@ function renderT4(){
     </div>`;
   }).join('');
 
-  // Irrigation chart
   const mm3=mMean();
   const effR=mm3.map(v=>Math.round(v*.7));
   const irrStd=ST.et0Monthly.map((e,i)=>Math.max(0,e-effR[i]));
@@ -1522,12 +1523,10 @@ function renderT4(){
   document.getElementById('nativePctLbl').textContent=npc+'%';
   document.getElementById('irrigSav').textContent='~'+(20+npc*1.4).toFixed(0)+'–'+(24+npc*1.5).toFixed(0)+'%';
 
-  // Soil prescriptions
   const ph=+document.getElementById('inPH').value,perc=+document.getElementById('inPerc').value;
   document.getElementById('soilOrg').textContent=`pH ${ph}: ${ph<5.5?'Lime required to raise above 5.5.':ph>8?'Sulphur application may be needed.':'Suitable for most native species. Add compost 25 kg/m² to raise OC above 1.5%.'}`;
   document.getElementById('soilPerc').textContent=`Percolation ${perc} mm/hr: ${perc>25?'Excellent drainage — standard pit sizing applies.':perc>10?'Good — percolation trenches at 15m intervals.':perc<5?'Poor drainage — increase pit volume by 50%, consider French drain primary.':'Moderate — standard SuDS design applies.'}`;
 
-  // ILI
   document.getElementById('iliGrid').innerHTML=[
     {i:'💧',t:'Water Ledger™',v:fmt(c.harvestKL)+' KL',d:'Annual harvest potential documented'},
     {i:'🌿',t:'Carbon Ledger™',v:Math.round(npc*ST.activeSqm/10000*2.5)+' tCO₂eq',d:'Estimated sequestration potential'},
@@ -1550,7 +1549,6 @@ function renderT5(){
   document.getElementById('devSite').textContent=siteName;
   document.getElementById('devMeta').textContent=`${Math.abs(lat).toFixed(4)}°N · ${Math.abs(lon).toFixed(4)}°E · ${(ST.activeSqm/4046.86).toFixed(2)} Acres · ${ptL}`;
 
-  // Executive summary
   const waterGap=c.surplus<0?`Your site cannot meet its own water demand — a shortfall of ${fmt(Math.abs(c.surplus))} KL per year exists.`:`Your site can produce a surplus of ${fmt(c.surplus)} KL per year — enough to eliminate municipal water dependency.`;
   document.getElementById('devExec').innerHTML=`This site at <strong>${Math.abs(lat).toFixed(4)}°N</strong> receives an average of <strong>${fmt(Math.round(ST.avgRain))} mm</strong> of rainfall per year. 
   With a ${(ST.activeSqm/4046.86).toFixed(2)}-acre active catchment and a Composite Runoff Coefficient of <strong>${ST.compositeC.toFixed(2)}</strong>, 
@@ -1558,13 +1556,12 @@ function renderT5(){
   ${waterGap} Your water self-sufficiency score is <strong>${c.selfSuff}%</strong>. 
   The one-time infrastructure required (recharge pits, storage tank, bioswale) is estimated at ${fmtRs(calcInfraTotal(c))} with a payback period of <strong>${calcPayback(c)} years</strong>.`;
 
-  // A: FINANCIAL
   const annSaving=Math.round(c.harvestKL*45);
   const infraTotal=calcInfraTotal(c);
   const payback=calcPayback(c);
   const roi10=Math.round(annSaving*10-infraTotal);
   const propValArea=ST.activeSqm;
-  const propPremium=Math.round(propValArea*3500*.08); // 8% on ₹3500/sqft equiv
+  const propPremium=Math.round(propValArea*3500*.08); 
   document.getElementById('fSav').textContent=fmtRs(annSaving);
   document.getElementById('fInv').textContent=fmtRs(infraTotal);
   document.getElementById('fPay').textContent=payback+' yrs';
@@ -1576,7 +1573,6 @@ function renderT5(){
   Over 10 years, that is a net return of <strong>${fmtRs(roi10)}</strong> — a ${roi10>0?Math.round(roi10/infraTotal*100)+'% ROI':'projected deficit; supplement with greywater recycling to improve'}. 
   IGBC Green Home certification — achievable with this infrastructure — commands a <strong>5–12% property value premium</strong> in the Bengaluru market.`;
 
-  // B: RISK
   const risks={
     flood:{pct:Math.min(95,Math.round(40+ST.compositeC*50)),lbl:'High' ,desc:`Peak runoff of ${c.Q_lhr.toLocaleString()} L/hr during a ${ST.returnPeriod}-yr storm. Without SuDS, your basement and landscape areas are at flood risk.`,col:'var(--R)'},
     bore:{pct:Math.round(70+(c.selfSuff<50?20:0)),lbl:'High',desc:`SE Bengaluru groundwater table has dropped 8m in 15 years (CGWB 2023). Borewell dependency without recharge = capital loss at 5–7 year horizon.`,col:'var(--A)'},
@@ -1598,7 +1594,6 @@ function renderT5(){
   <strong>market risk</strong> (no green certification = lower sale price). The cost of inaction — over 10 years — is estimated at 
   <strong>${fmtRs(Math.round(annSaving*10*1.4))}</strong> in avoided savings plus potential penalties.`;
 
-  // C: COMPLIANCE
   const compItems=[
     {s:'y',t:'BBMP RWH Bylaw — Mandatory',d:`All sites >600 sqm (this site: ${fmt(ST.totalSqm)} sqm) must install RWH. BBMP will not issue OC without compliance certificate. Recommended capacity: ${c.pitVol}m³ recharge + ${fmt(c.tankKL)} KL storage.`,pen:'Penalty: OC withheld. Works stalled. Approx ₹50K–₹2L fine.'},
     {s:'y',t:'BWSSB Rainwater Harvesting Rules 2009',d:`Plots >2400 sqft or buildings >4 floors must have RWH. Your project qualifies. Storage capacity requirement: minimum 20 litres per sqm of roof area.`,pen:'Non-compliance: BWSSB connection refused or disconnected.'},
@@ -1618,7 +1613,6 @@ function renderT5(){
   Failure to comply blocks the project's final delivery. The ${c.pitVol}m³ recharge pit + ${fmt(c.tankKL)} KL tank specification in this report directly satisfies both requirements. 
   Engage your Landscape Architect and structural engineer to prepare the RWH compliance certificate for submission with your OC application.`;
 
-  // D: NET-ZERO ROADMAP
   const rm=[
     {n:1,t:'Install Recharge Pits (Primary)',d:`${Math.ceil(c.pitVol/5)} percolation pits of 5m³ each at catchment low points. Gravel-filled with coconut fibre geotextile. Reduces peak runoff by ${Math.round(ST.compositeC*15)}% and recharges groundwater.`,cost:fmtRs(c.pitVol*25000),cls:'rc-g'},
     {n:2,t:'Sealed Storage Tank',d:`${fmt(c.tankKL)} KL underground lined sump. Feeds landscape irrigation and utility water during Mar–May dry season. Eliminates tanker dependency.`,cost:fmtRs(c.tankKL*3500),cls:'rc-a'},
@@ -1694,6 +1688,125 @@ async function triggerGBIF(){
       </div>`).join('');
   } catch(e) { toast('⚠ Error fetching species data'); }
   hideLd();
+}
+
+// ════════════════════════════════════════════════════════════
+// TELEMETRY UPLOAD & OCR (TESSERACT.JS)
+// ════════════════════════════════════════════════════════════
+async function handleTelemetryUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const previewBox = document.getElementById('telemetryPreviewBox');
+  const imgElement = document.getElementById('telemetryImg');
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    imgElement.src = e.target.result;
+    previewBox.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+
+  showLd('Running OCR on Telemetry Screenshot...');
+  updLd('Analyzing text (this may take a few seconds)...');
+  
+  try {
+    const worker = await Tesseract.createWorker('eng');
+    const ret = await worker.recognize(file);
+    const rawText = ret.data.text;
+    await worker.terminate();
+    
+    console.log("Raw OCR Output:\n", rawText);
+    toast('✅ OCR Complete. Check browser console for raw text.');
+    
+    parseTelemetryData(rawText);
+  } catch (error) {
+    console.error("OCR Error:", error);
+    toast('⚠ OCR failed. Please enter values manually.');
+  }
+  
+  hideLd();
+}
+
+function parseTelemetryData(text) {
+  // Regex to hunt for specific labels KSNDMC/IMD uses
+  const rainMatch = text.match(/Rainfall[\s:]*([\d.]+)/i);
+  const tempMatch = text.match(/Temp(?:erature)?[\s:]*([\d.]+)/i);
+
+  if(rainMatch && rainMatch[1]) {
+    console.log("Extracted Rainfall:", parseFloat(rainMatch[1]));
+  }
+  if(tempMatch && tempMatch[1]) {
+    console.log("Extracted Temperature:", parseFloat(tempMatch[1]));
+  }
+}
+
+function clearTelemetry() {
+  document.getElementById('telemetryImg').src = '';
+  document.getElementById('telemetryPreviewBox').style.display = 'none';
+  document.getElementById('telemetryUpload').value = '';
+}
+
+// ════════════════════════════════════════════════════════════
+// LEAD CAPTURE & PRINT INTERCEPT (GOOGLE SHEETS INTEGRATION)
+// ════════════════════════════════════════════════════════════
+function showPrintModal() { document.getElementById('printModal').classList.add('on'); }
+function closePrintModal() { document.getElementById('printModal').classList.remove('on'); }
+
+function submitLeadAndPrint() {
+  // Grab data from the Modal
+  const name = document.getElementById('leadName').value.trim();
+  const email = document.getElementById('leadEmail').value.trim();
+  const mobile = document.getElementById('leadMobile').value.trim();
+  const org = document.getElementById('leadOrg').value.trim();
+  
+  // Auto-grab data already filled out on Tab 1
+  const siteName = document.getElementById('siteName').value;
+  const siteSize = document.getElementById('totalArea').value + ' ' + document.getElementById('areaUnit').value;
+  
+  const projSelect = document.getElementById('projType');
+  const siteType = projSelect.options[projSelect.selectedIndex].text;
+  
+  // Basic validation
+  if(!name || !email || !mobile) {
+    toast('⚠ Please enter your name, email, and mobile number.');
+    return;
+  }
+
+  document.getElementById('btnSubmitLead').textContent = "Saving...";
+
+  // !!! REPLACE THIS URL WITH YOUR GOOGLE APPS SCRIPT WEB APP URL !!!
+  const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwbYsvOCtID9ftV03jO92saq0H6_rskbrW6yhMmsx0KAX29sIR5AZB1sSl43VaN71At8Q/exec';
+
+  if (GOOGLE_SCRIPT_URL !== 'https://script.google.com/macros/s/AKfycbwbYsvOCtID9ftV03jO92saq0H6_rskbrW6yhMmsx0KAX29sIR5AZB1sSl43VaN71At8Q/exec') {
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('email', email);
+    formData.append('mobile', mobile);
+    formData.append('org', org);
+    formData.append('siteName', siteName);
+    formData.append('siteSize', siteSize);
+    formData.append('siteType', siteType);
+
+    fetch(GOOGLE_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: formData
+    }).then(() => {
+      triggerActualPrint();
+    }).catch(e => {
+      console.error(e);
+      triggerActualPrint(); // Trigger print anyway so the user isn't stuck
+    });
+  } else {
+    triggerActualPrint(); 
+  }
+}
+
+function triggerActualPrint() {
+  closePrintModal();
+  document.getElementById('btnSubmitLead').textContent = "Generate PDF";
+  setTimeout(() => window.print(), 300);
 }
 </script>
 </body>
